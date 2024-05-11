@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <string.h>
 
 #define N 4
 #define NxN (N * N)
@@ -35,6 +36,7 @@ public:
                 }
 
         g = 0;
+        h = 0;
         f = 0;
     }
 
@@ -107,7 +109,7 @@ public:
         {
             for (int k = 0; k < N; k++)
             {
-                std::cout <<  "|----";
+                std::cout << "|----";
             }
             std::cout << (i == 0 ? "|\n" : "|\n");
 
@@ -117,7 +119,7 @@ public:
                     std::cout << "| " << std::setw(2) << tiles[i][j] << (j < N - 1 ? " " : " |\n");
                 else
                 {
-                    std::cout << "|"  << "||||" << (j < N - 1 ? "" : "|\n");
+                    std::cout << "|" << "||||" << (j < N - 1 ? "" : "|\n");
                 }
             }
         }
@@ -128,6 +130,10 @@ public:
         std::cout << "|\n";
         std::cout << "f = " << f << "\tg = " << g << "\th = " << h << std::endl;
     }
+    bool operator==(Tile const &tile1) const { return !memcmp(tiles, tile1.tiles, sizeof(int) * NxN); }
+
+    // this reversed intentionally i dont know how to reverse it
+    bool operator<(Tile const &tile1) const { return f > tile1.f; }
 
 private:
     void swap_tiles(int row1, int col1, int row2, int col2)
