@@ -55,17 +55,18 @@ public:
         next = nullptr;
     }
 
-    // Tile(const Tile &tile)
-    // {
-    //     memcpy(tiles, tile.tiles, sizeof(int) * NxN);
-    //     zero_row = tile.zero_row;
-    //     zero_column = tile.zero_column;
-    //     f = tile.f;
-    //     g = tile.g;
-    //     h = tile.h;
-    //     previous = nullptr;
-    //     next = nullptr;
-    // }
+    Tile(const Tile &tile)
+    {
+        memcpy(tiles, tile.tiles, sizeof(int) * NxN);
+        zero_row = tile.zero_row;
+        zero_column = tile.zero_column;
+        f = tile.f;
+        g = tile.g;
+        h = tile.h;
+        previous = nullptr;
+        next = nullptr;
+    }
+    
     void set_array(int tiles[N][N])
     {
         memcpy(this->tiles, tiles, sizeof(int) * NxN);
@@ -168,8 +169,8 @@ public:
 
     bool operator==(Tile const &tile1) const { return !memcmp(tiles, tile1.tiles, sizeof(int) * NxN); }
 
-    // this reversed intentionally i dont know how to reverse it
     bool operator<(Tile const &tile1) const { return f < tile1.f; }
+    bool operator>(Tile const &tile1) const { return f > tile1.f; }
 
 private:
     void swap_tiles(int row1, int col1, int row2, int col2)

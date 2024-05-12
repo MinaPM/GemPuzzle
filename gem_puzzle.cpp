@@ -1,65 +1,47 @@
 #include "tile.h"
-#include <vector>
-#include <queue>
-
-// std::vector<Tile> closed;
-// std::vector<Tile> opened;
-
-// struct TileTracker
-// {
-//     Tile node;
-//     TileTracker *previous;
-//     TileTracker *next;
-// } *opened, *closed, *succ_nodes[4];
 
 Tile *opened, *closed, *succ_nodes[4];
+// Tile *succ_nodes[4];
 
 void expand(Tile *node)
 {
-    // std::cout << "now in expand\n";
-
     for (int i = 0; i < 4; i++)
     {
-
-        succ_nodes[i] = new Tile(node->tiles); /*(Tile *)malloc(sizeof(Tile));*/
-        succ_nodes[i]->g = node->g;
-        // *succ_nodes[i] = *node;
+        succ_nodes[i] = new Tile(*node);
         succ_nodes[i]->previous = node;
     }
 
     if (!succ_nodes[0]->move_up())
     {
-        free(succ_nodes[0]);
+        delete succ_nodes[0];
         succ_nodes[0] = nullptr;
     }
 
     if (!succ_nodes[1]->move_down())
     {
-        free(succ_nodes[1]);
+        delete succ_nodes[1];
         succ_nodes[1] = nullptr;
     }
 
     if (!succ_nodes[2]->move_left())
     {
-        free(succ_nodes[2]);
+        delete succ_nodes[2];
         succ_nodes[2] = nullptr;
     }
 
     if (!succ_nodes[3]->move_right())
     {
-        free(succ_nodes[3]);
+        delete succ_nodes[3];
         succ_nodes[3] = nullptr;
     }
-
-    // for (int i = 0; i < 4; i++)
-    // {
-    //     succ_nodes[i]->node.print_tiles();
-    // }
 }
 
 bool found_in(Tile *pnode, Tile *list)
 {
-    while (list != NULL)
+    if (pnode == nullptr)
+        return false;
+
+    while (list != nullptr)
     {
         if (pnode == list)
         {
@@ -76,7 +58,7 @@ void insertion_sort(Tile *pnode)
 
     while (cursor != NULL)
     {
-        if (cursor->f > pnode->f)
+        if (*cursor > *pnode)
             break;
 
         prev = cursor;
@@ -103,21 +85,35 @@ void display_list(Tile *node)
         std::cout << "\n";
         node = node->previous;
     }
-    std::cout << "path length: " << pathlength << std::endl;
+    std::cout << "Path lengh=" << pathlength << std::endl;
+}
+
+void display_list_reversed(Tile *node, int *pathlength)
+{
+    if (node == nullptr)
+    {
+        std::cout << "Path lengh=" << *pathlength << "\n";
+        return;
+    }
+    else
+    {
+        (*pathlength)++;
+        display_list_reversed(node->previous, pathlength);
+        node->print_tiles();
+        std::cout << "\n";
+    }
 }
 
 int main()
 {
-    int arr[N][N] =
-        {
-            {5, 6, 1, 3},
-            {2, 0, 8, 4},
-            {9, 10, 7, 15},
-            {13, 14, 12, 11}};
+    int arr[N][N] = {{5, 6, 1, 3},
+                     {2, 0, 8, 4},
+                     {9, 10, 7, 15},
+                     {13, 14, 12, 11}};
+
     Tile goal = set_goal();
     Tile start(arr);
 
-    // opened = (Tile *)malloc(sizeof(Tile));
     opened = new Tile();
 
     *opened = start;
@@ -133,17 +129,17 @@ int main()
         opened = opened->next;
         if (*current == goal)
         {
-            std::cout << "found\n";
-            display_list(current);
+            int pathlength = 0;
+            display_list_reversed(current, &pathlength);
             break;
         }
         expand(current);
         for (int i = 0; i < 4; i++)
         {
             if (found_in(succ_nodes[i], opened) ||
-                found_in(succ_nodes[i], closed))
+                found_in(succ_nodes[i],opened))
             {
-                free(succ_nodes[i]);
+                delete succ_nodes[i];
                 succ_nodes[i] = nullptr;
             }
         }
