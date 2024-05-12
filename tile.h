@@ -18,11 +18,15 @@ class Tile
 public:
     static int goal_rows[NxN];
     static int goal_columns[NxN];
+    // static Tile *opened;
+    // static Tile *closed;
 
     int tiles[N][N];
     int zero_row;
     int zero_column;
     int f, g, h;
+    class Tile *previous;
+    class Tile *next;
 
     Tile()
     {
@@ -30,6 +34,8 @@ public:
         g = 0;
         h = 0;
         f = 0;
+        previous = nullptr;
+        next = nullptr;
     }
     Tile(int tiles[N][N])
     {
@@ -45,17 +51,21 @@ public:
         g = 0;
         h = 0;
         f = 0;
+        previous = nullptr;
+        next = nullptr;
     }
 
-    Tile(const Tile &tile)
-    {
-        memcpy(tiles, tile.tiles, sizeof(int) * NxN);
-        zero_row = tile.zero_row;
-        zero_column = tile.zero_column;
-        f = tile.f;
-        g = tile.g;
-        h = tile.h;
-    }
+    // Tile(const Tile &tile)
+    // {
+    //     memcpy(tiles, tile.tiles, sizeof(int) * NxN);
+    //     zero_row = tile.zero_row;
+    //     zero_column = tile.zero_column;
+    //     f = tile.f;
+    //     g = tile.g;
+    //     h = tile.h;
+    //     previous = nullptr;
+    //     next = nullptr;
+    // }
     void set_array(int tiles[N][N])
     {
         memcpy(this->tiles, tiles, sizeof(int) * NxN);
@@ -155,7 +165,6 @@ public:
         std::cout << "|\n";
         std::cout << "f = " << f << "\tg = " << g << "\th = " << h << std::endl;
     }
-
 
     bool operator==(Tile const &tile1) const { return !memcmp(tiles, tile1.tiles, sizeof(int) * NxN); }
 

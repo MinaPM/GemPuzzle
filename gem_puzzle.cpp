@@ -5,43 +5,47 @@
 // std::vector<Tile> closed;
 // std::vector<Tile> opened;
 
-struct TileTracker
-{
-    Tile node;
-    TileTracker *previous;
-    TileTracker *next;
-} *opened, *closed, *succ_nodes[4];
+// struct TileTracker
+// {
+//     Tile node;
+//     TileTracker *previous;
+//     TileTracker *next;
+// } *opened, *closed, *succ_nodes[4];
 
-void expand(TileTracker *node)
+Tile *opened, *closed, *succ_nodes[4];
+
+void expand(Tile *node)
 {
-    std::cout << "now in expand\n";
+    // std::cout << "now in expand\n";
 
     for (int i = 0; i < 4; i++)
     {
-        succ_nodes[i] = (struct TileTracker *)malloc(sizeof(TileTracker));
-        succ_nodes[i]->node = Tile(node->node);
+
+        succ_nodes[i] = new Tile(node->tiles); /*(Tile *)malloc(sizeof(Tile));*/
+        succ_nodes[i]->g = node->g;
+        // *succ_nodes[i] = *node;
         succ_nodes[i]->previous = node;
     }
 
-    if (!succ_nodes[0]->node.move_up())
+    if (!succ_nodes[0]->move_up())
     {
         free(succ_nodes[0]);
         succ_nodes[0] = nullptr;
     }
 
-    if (!succ_nodes[1]->node.move_down())
+    if (!succ_nodes[1]->move_down())
     {
         free(succ_nodes[1]);
         succ_nodes[1] = nullptr;
     }
 
-    if (!succ_nodes[2]->node.move_left())
+    if (!succ_nodes[2]->move_left())
     {
         free(succ_nodes[2]);
         succ_nodes[2] = nullptr;
     }
 
-    if (!succ_nodes[3]->node.move_right())
+    if (!succ_nodes[3]->move_right())
     {
         free(succ_nodes[3]);
         succ_nodes[3] = nullptr;
@@ -53,11 +57,11 @@ void expand(TileTracker *node)
     // }
 }
 
-bool found_in(struct TileTracker *pnode, struct TileTracker *list)
+bool found_in(Tile *pnode, Tile *list)
 {
     while (list != NULL)
     {
-        if (pnode->node == list->node)
+        if (pnode == list)
         {
             return true;
         }
@@ -66,21 +70,13 @@ bool found_in(struct TileTracker *pnode, struct TileTracker *list)
     return false;
 }
 
-void insertion_sort(struct TileTracker *pnode)
+void insertion_sort(Tile *pnode)
 {
-    // opened->next == nullptr ? std::cout << "null\n" : std::cout << "not null\n";
-    struct TileTracker *cursor = opened, *prev = opened;
+    Tile *cursor = opened, *prev = opened;
 
-    // cursor->node.print_tiles();
-    // cursor = cursor->next;
-    // cursor->node.print_tiles();
-
-    // cursor->node.print_tiles();
-    // return;
-    while (cursor->node.tiles != nullptr)
+    while (cursor != NULL)
     {
-        std::cout << "now in loop\n";
-        if (cursor->node.f > pnode->node.f)
+        if (cursor->f > pnode->f)
             break;
 
         prev = cursor;
@@ -97,69 +93,69 @@ void insertion_sort(struct TileTracker *pnode)
         pnode->next = cursor;
 }
 
+void display_list(Tile *node)
+{
+    int pathlength = 0;
+    while (node != nullptr)
+    {
+        pathlength++;
+        node->print_tiles();
+        std::cout << "\n";
+        node = node->previous;
+    }
+    std::cout << "path length: " << pathlength << std::endl;
+}
+
 int main()
 {
     int arr[N][N] =
         {
-            {1, 3, 4, 8},
-            {5, 0, 11, 7},
-            {9, 2, 14, 12},
-            {13, 6, 10, 15},
-        };
+            {5, 6, 1, 3},
+            {2, 0, 8, 4},
+            {9, 10, 7, 15},
+            {13, 14, 12, 11}};
     Tile goal = set_goal();
     Tile start(arr);
 
-    opened = (TileTracker *)malloc(sizeof(TileTracker));
-    if (opened == NULL)
-    {
-        std::cout << "it is null\n";
-    }
+    // opened = (Tile *)malloc(sizeof(Tile));
+    opened = new Tile();
 
-    opened->node = Tile(start);
+    *opened = start;
     opened->next = nullptr;
     opened->previous = nullptr;
 
-    TileTracker *current;
+    Tile *current;
     current = opened;
-    expand(current);
-    // succ_nodes[0]->node.print_tiles();
-    // succ_nodes[1]->node.print_tiles();
-    // succ_nodes[2]->node.print_tiles();
-    // succ_nodes[3]->node.print_tiles();
 
-    insertion_sort(succ_nodes[0]);
-    insertion_sort(succ_nodes[1]);
-    insertion_sort(succ_nodes[2]);
-    insertion_sort(succ_nodes[3]);
+    while (opened != NULL)
+    {
+        current = opened;
+        opened = opened->next;
+        if (*current == goal)
+        {
+            std::cout << "found\n";
+            display_list(current);
+            break;
+        }
+        expand(current);
+        for (int i = 0; i < 4; i++)
+        {
+            if (found_in(succ_nodes[i], opened) ||
+                found_in(succ_nodes[i], closed))
+            {
+                free(succ_nodes[i]);
+                succ_nodes[i] = nullptr;
+            }
+        }
 
-    // while (opened != NULL)
-    // {
-    //     current = opened;
-    //     opened = opened->next;
-    //     if (current->node == goal)
-    //     {
-    //         std::cout << "found\n";
-    //         break;
-    //     }
-    //     expand(current);
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         if (found_in(succ_nodes[i], opened) ||
-    //             found_in(succ_nodes[i], closed))
-    //         {
-    //             free(succ_nodes[i]);
-    //             succ_nodes[i] = nullptr;
-    //         }
-    //     }
-
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         if (succ_nodes[i] != nullptr)
-    //         {
-    //             insertion_sort(succ_nodes[i]);
-    //         }
-    //     }
-    //     current->next = closed;
-    //     closed = current;
-    // }
+        for (int i = 0; i < 4; i++)
+        {
+            if (succ_nodes[i] != nullptr)
+            {
+                insertion_sort(succ_nodes[i]);
+            }
+        }
+        current->next = closed;
+        closed = current;
+    }
 }
