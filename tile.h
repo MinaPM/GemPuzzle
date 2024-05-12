@@ -24,6 +24,13 @@ public:
     int zero_column;
     int f, g, h;
 
+    Tile()
+    {
+
+        g = 0;
+        h = 0;
+        f = 0;
+    }
     Tile(int tiles[N][N])
     {
         memcpy(this->tiles, tiles, sizeof(int) * NxN);
@@ -49,7 +56,17 @@ public:
         g = tile.g;
         h = tile.h;
     }
-
+    void set_array(int tiles[N][N])
+    {
+        memcpy(this->tiles, tiles, sizeof(int) * NxN);
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < N; j++)
+                if (this->tiles[i][j] == 0)
+                {
+                    zero_row = i;
+                    zero_column = j;
+                }
+    }
     void manhattan_distance()
     {
         h = 0;
@@ -70,37 +87,45 @@ public:
     bool left_movable() { return zero_column > 0; }
     bool right_movable() { return zero_column < N - 1; }
 
-    void move_up()
+    bool move_up()
     {
         if (up_movable())
         {
             swap_tiles(zero_row, zero_column, zero_row--, zero_column);
             update_fgh();
+            return true;
         }
+        return false;
     }
-    void move_down()
+    bool move_down()
     {
         if (down_movable())
         {
             swap_tiles(zero_row, zero_column, zero_row++, zero_column);
             update_fgh();
+            return true;
         }
+        return false;
     }
-    void move_left()
+    bool move_left()
     {
         if (left_movable())
         {
             swap_tiles(zero_row, zero_column, zero_row, zero_column--);
             update_fgh();
+            return true;
         }
+        return false;
     }
-    void move_right()
+    bool move_right()
     {
         if (right_movable())
         {
             swap_tiles(zero_row, zero_column, zero_row, zero_column++);
             update_fgh();
+            return true;
         }
+        return false;
     }
 
     void print_tiles()
@@ -130,10 +155,12 @@ public:
         std::cout << "|\n";
         std::cout << "f = " << f << "\tg = " << g << "\th = " << h << std::endl;
     }
+
+
     bool operator==(Tile const &tile1) const { return !memcmp(tiles, tile1.tiles, sizeof(int) * NxN); }
 
     // this reversed intentionally i dont know how to reverse it
-    bool operator<(Tile const &tile1) const { return f > tile1.f; }
+    bool operator<(Tile const &tile1) const { return f < tile1.f; }
 
 private:
     void swap_tiles(int row1, int col1, int row2, int col2)
