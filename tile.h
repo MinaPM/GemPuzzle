@@ -18,8 +18,8 @@ class Tile
 public:
     static int goal_rows[NxN];
     static int goal_columns[NxN];
-    // static Tile *opened;
-    // static Tile *closed;
+    static Tile *opened;
+    static Tile *closed;
 
     int tiles[N][N];
     int zero_row;
@@ -66,7 +66,7 @@ public:
         previous = nullptr;
         next = nullptr;
     }
-    
+
     void set_array(int tiles[N][N])
     {
         memcpy(this->tiles, tiles, sizeof(int) * NxN);
@@ -77,6 +77,29 @@ public:
                     zero_row = i;
                     zero_column = j;
                 }
+    }
+
+    void insertion_sort()
+    {
+        Tile *cursor = opened, *prev = opened;
+
+        while (cursor != NULL)
+        {
+            if (*cursor > *this)
+                break;
+
+            prev = cursor;
+            cursor = cursor->next;
+        }
+
+        // inserting at head
+        if (opened == NULL || cursor == opened)
+            opened = this;
+        // inserting in the middle
+        else
+            prev->next = this;
+        if (cursor != NULL)
+            next = cursor;
     }
     void manhattan_distance()
     {
@@ -192,6 +215,15 @@ Tile initialize(char **argv)
 
 int Tile::goal_rows[NxN];
 int Tile::goal_columns[NxN];
+
+Tile *Tile::opened = nullptr;
+Tile *Tile::closed;
+
+// function pointers to each move
+bool (Tile::*moves[4])() = {&Tile::move_up,
+                            &Tile::move_down,
+                            &Tile::move_left,
+                            &Tile::move_right};
 
 Tile set_goal()
 {

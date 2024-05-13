@@ -1,38 +1,19 @@
 #include "tile.h"
 
-Tile *opened, *closed, *succ_nodes[4];
-// Tile *succ_nodes[4];
+// Tile *opened, *closed, *succ_nodes[4];
+Tile *succ_nodes[4];
 
 void expand(Tile *node)
 {
     for (int i = 0; i < 4; i++)
-    {
+    { // 0 up, 1 down, 2 left, 4 right
         succ_nodes[i] = new Tile(*node);
         succ_nodes[i]->previous = node;
-    }
-
-    if (!succ_nodes[0]->move_up())
-    {
-        delete succ_nodes[0];
-        succ_nodes[0] = nullptr;
-    }
-
-    if (!succ_nodes[1]->move_down())
-    {
-        delete succ_nodes[1];
-        succ_nodes[1] = nullptr;
-    }
-
-    if (!succ_nodes[2]->move_left())
-    {
-        delete succ_nodes[2];
-        succ_nodes[2] = nullptr;
-    }
-
-    if (!succ_nodes[3]->move_right())
-    {
-        delete succ_nodes[3];
-        succ_nodes[3] = nullptr;
+        if (!(succ_nodes[i]->*moves[i])())
+        {
+            delete succ_nodes[i];
+            succ_nodes[i] = nullptr;
+        }
     }
 }
 
@@ -44,35 +25,11 @@ bool found_in(Tile *pnode, Tile *list)
     while (list != nullptr)
     {
         if (pnode == list)
-        {
             return true;
-        }
+
         list = list->next;
     }
     return false;
-}
-
-void insertion_sort(Tile *pnode)
-{
-    Tile *cursor = opened, *prev = opened;
-
-    while (cursor != NULL)
-    {
-        if (*cursor > *pnode)
-            break;
-
-        prev = cursor;
-        cursor = cursor->next;
-    }
-
-    // inserting at head
-    if (opened == NULL || cursor == opened)
-        opened = pnode;
-    // inserting in the middle
-    else
-        prev->next = pnode;
-    if (cursor != NULL)
-        pnode->next = cursor;
 }
 
 void display_list(Tile *node)
@@ -114,19 +71,19 @@ int main()
     Tile goal = set_goal();
     Tile start(arr);
 
-    opened = new Tile();
+    Tile::opened = new Tile();
 
-    *opened = start;
-    opened->next = nullptr;
-    opened->previous = nullptr;
+    *Tile::opened = start;
+    Tile::opened->next = nullptr;
+    Tile::opened->previous = nullptr;
 
     Tile *current;
-    current = opened;
+    current = Tile::opened;
 
-    while (opened != NULL)
+    while (Tile::opened != NULL)
     {
-        current = opened;
-        opened = opened->next;
+        current = Tile::opened;
+        Tile::opened = Tile::opened->next;
         if (*current == goal)
         {
             int pathlength = 0;
@@ -136,8 +93,8 @@ int main()
         expand(current);
         for (int i = 0; i < 4; i++)
         {
-            if (found_in(succ_nodes[i], opened) ||
-                found_in(succ_nodes[i],opened))
+            if (found_in(succ_nodes[i], Tile::opened) ||
+                found_in(succ_nodes[i], Tile::opened))
             {
                 delete succ_nodes[i];
                 succ_nodes[i] = nullptr;
@@ -148,10 +105,11 @@ int main()
         {
             if (succ_nodes[i] != nullptr)
             {
-                insertion_sort(succ_nodes[i]);
+                succ_nodes[i]->insertion_sort();
+                // insertion_sort(succ_nodes[i]);
             }
         }
-        current->next = closed;
-        closed = current;
+        current->next = Tile::closed;
+        Tile::closed = current;
     }
 }
