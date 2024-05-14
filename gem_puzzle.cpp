@@ -1,8 +1,8 @@
 #include "tile.h"
 
 /***
- * 
-*/
+ * Expands the node and adds it to the opened list
+ */
 void expand(Tile *node)
 {
     for (int i = 0; i < 4; i++)
@@ -87,7 +87,7 @@ int main()
         }
         expand(current);
 
-        current->close_node();
+        current->close();
     }
     if (!solvable)
         std::cout << "No solution found\n";

@@ -115,9 +115,9 @@ public:
     }
 
     /**
-     * Closes the node by inserted it to the closed nodes list
+     * Closes the node by inserting it to the closed nodes list
      */
-    void close_node()
+    void close()
     {
         next = Tile::closed;
         Tile::closed = this;
