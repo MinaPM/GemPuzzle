@@ -1,35 +1,33 @@
 #include "tile.h"
 
-// Tile *opened, *closed, *succ_nodes[4];
-Tile *succ_nodes[4];
-
+/***
+ * 
+*/
 void expand(Tile *node)
 {
     for (int i = 0; i < 4; i++)
-    { // 0 up, 1 down, 2 left, 4 right
-        succ_nodes[i] = new Tile(*node);
-        succ_nodes[i]->previous = node;
-        if (!(succ_nodes[i]->*moves[i])())
+    {
+        // 0 up, 1 down, 2 left, 4 right
+        // of the move can be made
+        if ((node->*moves[0][i])())
         {
-            delete succ_nodes[i];
-            succ_nodes[i] = nullptr;
+            Tile *newMove = new Tile(*node);
+            newMove->previous = node;
+            (newMove->*moves[1][i])();
+
+            // if it is a duplicate found in opened or closed
+            if (newMove->found_in(Tile::opened) ||
+                newMove->found_in(Tile::closed))
+            { // delete the move
+                delete newMove;
+                newMove = nullptr;
+            }
+            else
+            { // add it to be expanded later
+                newMove->insertion_sort();
+            }
         }
     }
-}
-
-bool found_in(Tile *pnode, Tile *list)
-{
-    if (pnode == nullptr)
-        return false;
-
-    while (list != nullptr)
-    {
-        if (pnode == list)
-            return true;
-
-        list = list->next;
-    }
-    return false;
 }
 
 void display_list(Tile *node)
@@ -42,14 +40,15 @@ void display_list(Tile *node)
         std::cout << "\n";
         node = node->previous;
     }
-    std::cout << "Path lengh=" << pathlength << std::endl;
+    std::cout << "\nPath lengh=" << pathlength << std::endl
+              << "\n";
 }
 
 void display_list_reversed(Tile *node, int *pathlength)
 {
     if (node == nullptr)
     {
-        std::cout << "Path lengh=" << *pathlength << "\n";
+        std::cout << "\nPath lengh=" << *pathlength << "\n\n";
         return;
     }
     else
@@ -68,17 +67,12 @@ int main()
                      {9, 10, 7, 15},
                      {13, 14, 12, 11}};
 
+    bool solvable = false;
     Tile goal = set_goal();
-    Tile start(arr);
 
-    Tile::opened = new Tile();
-
-    *Tile::opened = start;
-    Tile::opened->next = nullptr;
-    Tile::opened->previous = nullptr;
+    Tile::opened = new Tile(arr);
 
     Tile *current;
-    current = Tile::opened;
 
     while (Tile::opened != NULL)
     {
@@ -88,28 +82,13 @@ int main()
         {
             int pathlength = 0;
             display_list_reversed(current, &pathlength);
+            solvable = true;
             break;
         }
         expand(current);
-        for (int i = 0; i < 4; i++)
-        {
-            if (found_in(succ_nodes[i], Tile::opened) ||
-                found_in(succ_nodes[i], Tile::opened))
-            {
-                delete succ_nodes[i];
-                succ_nodes[i] = nullptr;
-            }
-        }
 
-        for (int i = 0; i < 4; i++)
-        {
-            if (succ_nodes[i] != nullptr)
-            {
-                succ_nodes[i]->insertion_sort();
-                // insertion_sort(succ_nodes[i]);
-            }
-        }
-        current->next = Tile::closed;
-        Tile::closed = current;
+        current->close_node();
     }
+    if (!solvable)
+        std::cout << "No solution found\n";
 }

@@ -5,14 +5,6 @@
 #define N 4
 #define NxN (N * N)
 
-enum moves
-{
-    up,
-    down,
-    left,
-    right
-};
-
 class Tile
 {
 public:
@@ -28,15 +20,23 @@ public:
     class Tile *previous;
     class Tile *next;
 
+    /**
+     * Default constructor
+     */
     Tile()
     {
-
         g = 0;
         h = 0;
         f = 0;
         previous = nullptr;
         next = nullptr;
     }
+
+    /**
+     * Constructor
+     *
+     * @param tiles the array of tiles
+     */
     Tile(int tiles[N][N])
     {
         memcpy(this->tiles, tiles, sizeof(int) * NxN);
@@ -55,6 +55,11 @@ public:
         next = nullptr;
     }
 
+    /**
+     * Copy constructor
+     *
+     * @param tile the tile to be copied
+     */
     Tile(const Tile &tile)
     {
         memcpy(tiles, tile.tiles, sizeof(int) * NxN);
@@ -67,6 +72,11 @@ public:
         next = nullptr;
     }
 
+    /**
+     * Sets the order of tiles based on a 2D array
+     *
+     * @param tiles the array of tiles
+     */
     void set_array(int tiles[N][N])
     {
         memcpy(this->tiles, tiles, sizeof(int) * NxN);
@@ -78,7 +88,9 @@ public:
                     zero_column = j;
                 }
     }
-
+    /**
+     * Inserts the node in the currently opened node to be expanded later
+     */
     void insertion_sort()
     {
         Tile *cursor = opened, *prev = opened;
@@ -101,6 +113,18 @@ public:
         if (cursor != NULL)
             next = cursor;
     }
+
+    /**
+     * Closes the node by inserted it to the closed nodes list
+     */
+    void close_node()
+    {
+        next = Tile::closed;
+        Tile::closed = this;
+    }
+    /**
+     * Calculates the Manhattan distance for each tile and add them to h
+     */
     void manhattan_distance()
     {
         h = 0;
@@ -109,59 +133,115 @@ public:
                 if (tiles[i][j] != 0)
                     h += (abs(i - goal_rows[tiles[i][j]]) + abs(j - goal_columns[tiles[i][j]]));
     }
-
+    /**
+     * Updates the fringe (f), cost (g), and heuristic (h)
+     */
     void update_fgh()
     {
         manhattan_distance();
         f = h + ++g;
     }
-
+    
+    /**
+     * @return True if the empty tile can be moved up
+     */
     bool up_movable() { return zero_row > 0; }
+
+    /**
+     * @return True if the empty tile can be moved down
+     */
     bool down_movable() { return zero_row < N - 1; }
+
+    /**
+     * @return True if the empty tile can be moved left
+     */
     bool left_movable() { return zero_column > 0; }
+
+    /**
+     * @return True if the empty tile can be moved right
+     */
     bool right_movable() { return zero_column < N - 1; }
 
+    /**
+     * Moves the empty tile up
+     * @return true if the move is successful
+     */
     bool move_up()
     {
-        if (up_movable())
-        {
-            swap_tiles(zero_row, zero_column, zero_row--, zero_column);
-            update_fgh();
-            return true;
-        }
-        return false;
+        if (!up_movable())
+            return false;
+
+        swap_tiles(zero_row, zero_column, zero_row--, zero_column);
+        update_fgh();
+        return true;
     }
+
+    /**
+     * Moves the empty tile down
+     * @return true if the move is successful
+     */
     bool move_down()
     {
-        if (down_movable())
-        {
-            swap_tiles(zero_row, zero_column, zero_row++, zero_column);
-            update_fgh();
-            return true;
-        }
-        return false;
+        if (!down_movable())
+            return false;
+
+        swap_tiles(zero_row, zero_column, zero_row++, zero_column);
+        update_fgh();
+        return true;
     }
+
+    /**
+     * Moves the empty tile left
+     * @return true if the move is successful
+     */
     bool move_left()
     {
-        if (left_movable())
-        {
-            swap_tiles(zero_row, zero_column, zero_row, zero_column--);
-            update_fgh();
-            return true;
-        }
-        return false;
+        if (!left_movable())
+            return false;
+
+        swap_tiles(zero_row, zero_column, zero_row, zero_column--);
+        update_fgh();
+        return true;
     }
+
+    /**
+     * Moves the empty tile right
+     * @return true if the move is successful
+     */
     bool move_right()
     {
-        if (right_movable())
+        if (!right_movable())
+            return false;
+
+        swap_tiles(zero_row, zero_column, zero_row, zero_column++);
+        update_fgh();
+        return true;
+    }
+
+    /**
+     * Checks if the tile is found in the list
+     *
+     * @param list the list to be checked (opened or closed)
+     * @return true if the tile is found in the list
+     */
+    bool found_in(Tile *list)
+    {
+        if (this == nullptr)
+            return false;
+
+        while (list != nullptr)
         {
-            swap_tiles(zero_row, zero_column, zero_row, zero_column++);
-            update_fgh();
-            return true;
+            if (this == list)
+                return true;
+
+            list = list->next;
         }
         return false;
     }
 
+    /**
+     * Prints the tiles
+     */
     void print_tiles()
     {
         for (int i = 0; i < N; i++)
@@ -191,7 +271,6 @@ public:
     }
 
     bool operator==(Tile const &tile1) const { return !memcmp(tiles, tile1.tiles, sizeof(int) * NxN); }
-
     bool operator<(Tile const &tile1) const { return f < tile1.f; }
     bool operator>(Tile const &tile1) const { return f > tile1.f; }
 
@@ -202,6 +281,11 @@ private:
     }
 };
 
+/**
+ * Initializes the starting state of the puzzle using the command line arguments
+ * @param argv the command line arguments
+ * @return the starting state of the puzzle
+ */
 Tile initialize(char **argv)
 {
     int tempgoal[N][N], i, j, k, col, row, index = 1;
@@ -220,11 +304,20 @@ Tile *Tile::opened = nullptr;
 Tile *Tile::closed;
 
 // function pointers to each move
-bool (Tile::*moves[4])() = {&Tile::move_up,
-                            &Tile::move_down,
-                            &Tile::move_left,
-                            &Tile::move_right};
+bool (Tile::*moves[2][4])() = {{&Tile::up_movable,
+                                &Tile::down_movable,
+                                &Tile::left_movable,
+                                &Tile::right_movable},
 
+                               {&Tile::move_up,
+                                &Tile::move_down,
+                                &Tile::move_left,
+                                &Tile::move_right}};
+
+/**
+ * Sets the goal state of the puzzle
+ * @return the goal state of the puzzle
+ */
 Tile set_goal()
 {
     int tempgoal[N][N], i, col, row;
