@@ -3,7 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/include"
             ],
             "defines": [
                 "_DEBUG",
@@ -13,12 +14,13 @@
             "windowsSdkVersion": "10.0.22621.0",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "compilerPath": "C:/Program Files/Compiler/msys64/ucrt64/bin/g++.exe"
+            "compilerPath": "C:/mingw64/bin/g++.exe"
         },
         {
             "name": "C++",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/include"
             ],
             "defines": [
                 "_DEBUG",
