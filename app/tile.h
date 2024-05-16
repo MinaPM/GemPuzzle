@@ -12,11 +12,13 @@ public:
     static int goal_columns[NxN];
     static Tile *opened;
     static Tile *closed;
+    static int closed_count;
+    static int opened_count;
 
     int tiles[N][N];
     int zero_row;
     int zero_column;
-    int f, g, h;
+    int f, g, h, H[N][N];
     class Tile *previous;
     class Tile *next;
 
@@ -63,6 +65,7 @@ public:
     Tile(const Tile &tile)
     {
         memcpy(tiles, tile.tiles, sizeof(int) * NxN);
+        memcpy(H, tile.H, sizeof(int) * NxN);
         zero_row = tile.zero_row;
         zero_column = tile.zero_column;
         f = tile.f;
@@ -93,6 +96,7 @@ public:
      */
     void insertion_sort()
     {
+        opened_count++;
         Tile *cursor = opened, *prev = opened;
 
         while (cursor != NULL)
@@ -119,6 +123,7 @@ public:
      */
     void close()
     {
+        closed_count++;
         next = Tile::closed;
         Tile::closed = this;
     }
@@ -130,8 +135,11 @@ public:
         h = 0;
         for (int i = 0; i < N; i++)
             for (int j = 0; j < N; j++)
+            {
+                H[i][j] = (abs(i - goal_rows[tiles[i][j]]) + abs(j - goal_columns[tiles[i][j]]));
                 if (tiles[i][j] != 0)
-                    h += (abs(i - goal_rows[tiles[i][j]]) + abs(j - goal_columns[tiles[i][j]]));
+                    h += H[i][j];
+            }
     }
     /**
      * Updates the fringe (f), cost (g), and heuristic (h)
@@ -141,7 +149,7 @@ public:
         manhattan_distance();
         f = h + ++g;
     }
-    
+
     /**
      * @return True if the empty tile can be moved up
      */
@@ -299,6 +307,8 @@ Tile initialize(char **argv)
 
 int Tile::goal_rows[NxN];
 int Tile::goal_columns[NxN];
+int Tile::closed_count=0;
+int Tile::opened_count=0;
 
 Tile *Tile::opened = nullptr;
 Tile *Tile::closed;

@@ -1,10 +1,10 @@
 all: compile link run
 
 compile:
-	g++ -c main.cpp -I".\src\include"
+	g++ -c ./app/main.cpp -o ./app/main.o -I".\src\include"
 
 link:
-	g++ main.o -o gem_puzzle -L".\src\lib" -lsfml-graphics -lsfml-audio -lsfml-window  -lsfml-system
+	g++ ./app/main.o -o ./app/gem_puzzle -L".\src\lib" -lsfml-graphics -lsfml-window  -lsfml-system
 
 run:
-	.\gem_puzzle
+	.\app\gem_puzzle
