@@ -1,8 +1,10 @@
 #include "TileShape.h"
+// #include <chrono>
 #include <unistd.h>
 #include <thread>
 
 TileShape tileShape;
+Tile goal;
 
 /***
  * Expands the node and adds it to the opened list
@@ -34,11 +36,39 @@ void expand(Tile *node)
 	}
 }
 
+void display_list_reversed(Tile *node)
+{
+	if (node == nullptr)
+	{
+		return;
+	}
+	else
+	{
+		display_list_reversed(node->previous);
+		tileShape.update_values(*node);
+		sleep(1);
+	}
+}
+
+void shuffle_tile(Tile *tile, int level)
+{
+	if (tile == nullptr || level < 1)
+		return;
+
+	int mv;
+	while (level--)
+	{
+		mv = rand() % 4;
+		if(!(tile->*moves[1][mv])())
+		level++;
+	}
+}
+
 bool solve_puzzle()
 {
 
 	bool solvable = false;
-	Tile goal = set_goal();
+	shuffle_tile(Tile::opened, 100);
 
 	Tile *current;
 
@@ -51,11 +81,12 @@ bool solve_puzzle()
 		{
 			int pathlength = 0;
 			solvable = true;
+			display_list_reversed(current);
 			return true;
 		}
 		expand(current);
 		current->close();
-		usleep(50000);
+		// usleep();
 	}
 	if (!solvable)
 	{
@@ -66,19 +97,15 @@ bool solve_puzzle()
 
 int main()
 {
-
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 16;
 	sf::RenderWindow window(sf::VideoMode(1000, 720), "Gem Puzzle", sf::Style::Close, settings);
 
-
-	int arr[N][N] = {{5, 6, 1, 3},
-					 {2, 0, 8, 4},
-					 {9, 10, 7, 15},
-					 {13, 14, 12, 11}};
-	Tile::opened = new Tile(arr);
+	srand(time(NULL));
+	goal = set_goal();
+	Tile::opened = new Tile(goal);
 	Tile::opened->update_fgh();
-	
+
 	std::thread solve = std::thread(&solve_puzzle);
 	solve.detach();
 

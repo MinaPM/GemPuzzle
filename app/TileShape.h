@@ -48,9 +48,6 @@ public:
                 tilesShapes[i][j].setPosition(
                     (window_size.x / 2 - tile_size * N / 2) + j * tile_size + tile_size / 2,
                     (window_size.y / 2 - tile_size * N / 2) + i * tile_size + tile_size / 2);
-                tile_numbers[i][j].setPosition(
-                    tilesShapes[i][j].getPosition().x - tile_numbers[i][j].getLocalBounds().width / 2,
-                    tilesShapes[i][j].getPosition().y - tile_numbers[i][j].getLocalBounds().height / 2);
             }
         center_text();
     }
@@ -64,8 +61,8 @@ public:
                     tilesShapes[i][j].getPosition().y - tile_numbers[i][j].getLocalBounds().height / 2 - 10);
 
                 tile_fgh[i][j].setPosition(
-                    tilesShapes[i][j].getPosition().x,
-                    tilesShapes[i][j].getPosition().y + tile_size / 4);
+                    tilesShapes[i][j].getPosition().x-tilesShapes[i][j].getOrigin().x,
+                    tilesShapes[i][j].getPosition().y-tilesShapes[i][j].getOrigin().y);
             }
     }
 
