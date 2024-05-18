@@ -1,5 +1,5 @@
 #include "TileShape.h"
-// #include <chrono>
+#include "TileControls.h"
 #include <unistd.h>
 #include <thread>
 
@@ -59,8 +59,14 @@ void shuffle_tile(Tile *tile, int level)
 	while (level--)
 	{
 		mv = rand() % 4;
-		if(!(tile->*moves[1][mv])())
-		level++;
+		if (!(tile->*moves[1][mv])())
+		{
+			level++;
+			continue;
+		}
+
+		tileShape.update_values(*tile);
+		usleep(10000);
 	}
 }
 
@@ -68,8 +74,6 @@ bool solve_puzzle()
 {
 
 	bool solvable = false;
-	shuffle_tile(Tile::opened, 100);
-
 	Tile *current;
 
 	while (Tile::opened != NULL)
@@ -86,7 +90,7 @@ bool solve_puzzle()
 		}
 		expand(current);
 		current->close();
-		// usleep();
+		// usleep(10000);
 	}
 	if (!solvable)
 	{
@@ -97,21 +101,39 @@ bool solve_puzzle()
 
 int main()
 {
+
+	// window settings
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 16;
 	sf::RenderWindow window(sf::VideoMode(1000, 720), "Gem Puzzle", sf::Style::Close, settings);
+	window.setFramerateLimit(30);
 
+	// setting the seed for the random function
 	srand(time(NULL));
+
+	// intit goal tile
 	goal = set_goal();
 	Tile::opened = new Tile(goal);
 	Tile::opened->update_fgh();
+	tileShape.update_values(*Tile::opened);
 
-	std::thread solve = std::thread(&solve_puzzle);
-	solve.detach();
+	// loading font
+	sf::Font roboto_font;
+	roboto_font.loadFromFile("Assets\\Fonts\\roboto.ttf");
 
+	tileShape.set_font(roboto_font);
 	tileShape.center_tiles(window.getSize());
 
+	TileControls tileControls(roboto_font);
+	// tileControls.setFont(roboto_font);
+
+	// starting solveing function
+	std::thread solve;
+	std::thread shuffle;
+
+	// event for handling input
 	sf::Event event;
+
 	while (true)
 	{
 		while (window.pollEvent(event))
@@ -121,10 +143,31 @@ int main()
 				window.close();
 				return 0;
 			}
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+			{
+				if (!tileControls.start_pressed && tileControls.start.within(sf::Mouse::getPosition(window)))
+				{
+					tileControls.start_pressed = true;
+					solve = std::thread(&solve_puzzle);
+					solve.detach();
+				}
+				if (!tileControls.shuffle_pressed && tileControls.shuffle.within(sf::Mouse::getPosition(window)))
+				{
+					tileControls.shuffle_pressed = true;
+					shuffle = std::thread(&shuffle_tile, Tile::opened,
+										  tileControls.shuffle_slider.current);
+					shuffle.detach();
+				}
+				if (tileControls.shuffle_slider.within(sf::Mouse::getPosition(window)))
+				{
+					tileControls.shuffle_slider.setValue(sf::Mouse::getPosition(window));
+				}
+			}
 		}
 
 		window.clear();
 		window.draw(tileShape);
+		window.draw(tileControls);
 		window.display();
 	}
 	solve.join();

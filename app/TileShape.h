@@ -7,15 +7,13 @@ public:
     sf::RectangleShape tilesShapes[N][N];
     sf::Text tile_numbers[N][N];
     sf::Text tile_fgh[N][N];
-    sf::Font roboto_font;
     float tile_size;
     int max_dist;
 
-    TileShape()
+    TileShape(/*const sf::Font &font*/)
     {
         max_dist = 2 * (N - 1);
         tile_size = 100;
-        roboto_font.loadFromFile("Assets\\Fonts\\roboto.ttf");
         for (int i = 0; i < N; i++)
             for (int j = 0; j < N; j++)
             {
@@ -31,13 +29,22 @@ public:
                 tile_numbers[i][j].setCharacterSize(30);
                 tile_numbers[i][j].setFillColor(sf::Color::Black);
                 tile_numbers[i][j].setStyle(sf::Text::Bold);
-                tile_numbers[i][j].setFont(roboto_font);
-                // init tile fgh
+                // tile_numbers[i][j].setFont(font);
+                //  init tile fgh
                 tile_fgh[i][j].setCharacterSize(20);
                 tile_fgh[i][j].setFillColor(sf::Color::Black);
-                tile_fgh[i][j].setFont(roboto_font);
+                // tile_fgh[i][j].setFont(font);
             }
         center_text();
+    }
+
+    void set_font(const sf::Font &font){
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < N; j++)
+            {
+                tile_numbers[i][j].setFont(font);
+                tile_fgh[i][j].setFont(font);
+            } 
     }
 
     void center_tiles(sf::Vector2u window_size)
@@ -61,8 +68,8 @@ public:
                     tilesShapes[i][j].getPosition().y - tile_numbers[i][j].getLocalBounds().height / 2 - 10);
 
                 tile_fgh[i][j].setPosition(
-                    tilesShapes[i][j].getPosition().x-tilesShapes[i][j].getOrigin().x,
-                    tilesShapes[i][j].getPosition().y-tilesShapes[i][j].getOrigin().y);
+                    tilesShapes[i][j].getPosition().x - tilesShapes[i][j].getOrigin().x,
+                    tilesShapes[i][j].getPosition().y - tilesShapes[i][j].getOrigin().y);
             }
     }
 
