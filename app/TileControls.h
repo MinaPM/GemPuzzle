@@ -10,7 +10,7 @@ public:
     void (*onclick)();
     Button(const sf::Font &font, const std::string &text, int size)
     {
-        enabled=true;
+        enabled = true;
         button_text.setFont(font);
         button_text.setCharacterSize(size);
         button_text.setString(text);
@@ -100,14 +100,14 @@ public:
     void enable()
     {
         enabled = true;
-        //range_rect.setFillColor(sf::Color::White);
+        // range_rect.setFillColor(sf::Color::White);
         range_rect.setFillColor(sf::Color::Red);
     }
 
     void disable()
     {
         enabled = false;
-       // range_rect.setFillColor(sf::Color::White);
+        // range_rect.setFillColor(sf::Color::White);
         range_rect.setFillColor(sf::Color(50, 50, 50));
     }
 
@@ -141,15 +141,22 @@ public:
     Button shuffle;
     bool shuffle_pressed;
     Slider shuffle_slider;
-    TileControls(const sf::Font &font) : start(font, "Start", 20),
-                                         shuffle(font, "Shuffle", 20),
-                                         shuffle_slider(font, "Shuffle intensity", 20, 30, 5, 60)
+    Slider solving_speed_slider;
+    Slider solution_speed_slider;
+    TileControls(const sf::Font &font)
+        : start(font, "Start", 20),
+          shuffle(font, "Shuffle", 20),
+          shuffle_slider(font, "Shuffle intensity", 20, 30, 5, 61),
+          solving_speed_slider(font, "Solving speed", 20, 3, 1, 10),
+          solution_speed_slider(font, "Solution speed", 20, 1, 1, 10)
     {
         start_pressed = 0;
         shuffle_pressed = 0;
         shuffle.setPosition(20, 5);
         start.setPosition(20, 40);
-        shuffle_slider.setPosition(500, 5);
+        shuffle_slider.setPosition(20, 100);
+        solving_speed_slider.setPosition(20, 200);
+        solution_speed_slider.setPosition(20, 300);
     }
 
     void setFont(const sf::Font &font)
@@ -163,5 +170,7 @@ public:
         rt.draw(start, states);
         rt.draw(shuffle, states);
         rt.draw(shuffle_slider, states);
+        rt.draw(solving_speed_slider, states);
+        rt.draw(solution_speed_slider, states);
     }
 };

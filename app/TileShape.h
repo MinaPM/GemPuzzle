@@ -3,91 +3,69 @@
 
 class TileShape : public sf::Drawable, public sf::Transformable
 {
+    sf::RectangleShape square;
+    sf::Text tile_numbers;
+    sf::Text tile_fgh;
+
 public:
-    sf::RectangleShape tilesShapes[N][N];
-    sf::Text tile_numbers[N][N];
-    sf::Text tile_fgh[N][N];
     float tile_size;
-    int max_dist;
 
-    TileShape(/*const sf::Font &font*/)
+    TileShape()
     {
-        max_dist = 2 * (N - 1);
         tile_size = 100;
-        for (int i = 0; i < N; i++)
-            for (int j = 0; j < N; j++)
-            {
-                // init shapes
-                tilesShapes[i][j].setSize(sf::Vector2f(tile_size, tile_size));
-                tilesShapes[i][j].setPosition(i * tile_size, j * tile_size);
-                tilesShapes[i][j].setFillColor(sf::Color::White);
-                tilesShapes[i][j].setOutlineColor(sf::Color::Red);
-                tilesShapes[i][j].setOutlineThickness(2);
-                tilesShapes[i][j].setOrigin(tile_size / 2, tile_size / 2);
+        // init shapes
+        square.setSize(sf::Vector2f(tile_size, tile_size));
+        square.setFillColor(sf::Color::White);
+        square.setOutlineColor(sf::Color::Red);
+        square.setOutlineThickness(2);
+        square.setOrigin(tile_size / 2, tile_size / 2);
 
-                // intit tile number
-                tile_numbers[i][j].setCharacterSize(30);
-                tile_numbers[i][j].setFillColor(sf::Color::Black);
-                tile_numbers[i][j].setStyle(sf::Text::Bold);
-                // tile_numbers[i][j].setFont(font);
-                //  init tile fgh
-                tile_fgh[i][j].setCharacterSize(20);
-                tile_fgh[i][j].setFillColor(sf::Color::Black);
-                // tile_fgh[i][j].setFont(font);
-            }
-        center_text();
+        // intit tile number
+        tile_numbers.setCharacterSize(30);
+        tile_numbers.setFillColor(sf::Color::Black);
+        tile_numbers.setStyle(sf::Text::Bold);
+
+        //  init tile fgh
+        tile_fgh.setCharacterSize(20);
+        tile_fgh.setFillColor(sf::Color::Black);
     }
 
-    void set_font(const sf::Font &font){
-        for (int i = 0; i < N; i++)
-            for (int j = 0; j < N; j++)
-            {
-                tile_numbers[i][j].setFont(font);
-                tile_fgh[i][j].setFont(font);
-            } 
-    }
-
-    void center_tiles(sf::Vector2u window_size)
+    TileShape(const sf::Font &font)
     {
-        for (int i = 0; i < N; i++)
-            for (int j = 0; j < N; j++)
-            {
-                tilesShapes[i][j].setPosition(
-                    (window_size.x / 2 - tile_size * N / 2) + j * tile_size + tile_size / 2,
-                    (window_size.y / 2 - tile_size * N / 2) + i * tile_size + tile_size / 2);
-            }
-        center_text();
+        TileShape();
+        set_font(font);
     }
+
     void center_text()
     {
-        for (int i = 0; i < N; i++)
-            for (int j = 0; j < N; j++)
-            {
-                tile_numbers[i][j].setPosition(
-                    tilesShapes[i][j].getPosition().x - tile_numbers[i][j].getLocalBounds().width / 2,
-                    tilesShapes[i][j].getPosition().y - tile_numbers[i][j].getLocalBounds().height / 2 - 10);
+        tile_numbers.setPosition(
+            square.getPosition().x - tile_numbers.getLocalBounds().width / 2,
+            square.getPosition().y - tile_numbers.getLocalBounds().height / 2 - 10);
 
-                tile_fgh[i][j].setPosition(
-                    tilesShapes[i][j].getPosition().x - tilesShapes[i][j].getOrigin().x,
-                    tilesShapes[i][j].getPosition().y - tilesShapes[i][j].getOrigin().y);
-            }
+        tile_fgh.setPosition(
+            square.getPosition().x - square.getOrigin().x,
+            square.getPosition().y - square.getOrigin().y);
     }
 
-    void update_values(const Tile &tile)
+    void set_font(const sf::Font &font)
     {
-        for (int i = 0; i < N; i++)
-            for (int j = 0; j < N; j++)
-            {
-                tile_numbers[i][j].setString(((tile.tiles[i][j] == 0) ? "" : std::to_string(tile.tiles[i][j])));
-                tile_fgh[i][j].setString(std::to_string(tile.H[i][j]));
-                if (tile.tiles[i][j] != 0)
-                    tilesShapes[i][j].setFillColor(sf::Color(
-                        255,
-                        255 - (255 * tile.H[i][j] / max_dist),
-                        255 - (255 * tile.H[i][j] / max_dist)));
-                else
-                    tilesShapes[i][j].setFillColor(sf::Color::Yellow);
-            }
+        tile_numbers.setFont(font);
+        tile_fgh.setFont(font);
+        center_text();
+    }
+
+    void update_values(const int &tileNumber, const int &fghValue, int max_dist)
+    {
+
+        tile_numbers.setString(((tileNumber == 0) ? "" : std::to_string(tileNumber)));
+        tile_fgh.setString(std::to_string(fghValue));
+        if (tileNumber != 0)
+            square.setFillColor(sf::Color(
+                255,
+                255 - (255 * fghValue / max_dist),
+                255 - (255 * fghValue / max_dist)));
+        else
+            square.setFillColor(sf::Color::Yellow);
 
         center_text();
     }
@@ -95,14 +73,66 @@ public:
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
     {
         states.transform *= getTransform();
+        rt.draw(square, states);
+        rt.draw(tile_numbers, states);
+        rt.draw(tile_fgh, states);
+    }
+};
+
+class TileGrid : public sf::Drawable,
+                 public sf::Transformable
+{
+public:
+    TileShape tileShapes[N][N];
+
+    int max_dist;
+
+    TileGrid(/*const sf::Font &font*/)
+    {
+        max_dist = 2 * (N - 1);
+    }
+
+    TileGrid(const sf::Font &font)
+    {
+        TileGrid();
+        setFont(font);
+    }
+
+    void setFont(const sf::Font &font)
+    {
         for (int i = 0; i < N; i++)
-        {
+            for (int j = 0; j < N; j++)
+                tileShapes[i][j].set_font(font);
+    }
+
+    void center_tiles(sf::Vector2u window_size)
+    {
+        int tileSize = tileShapes[0][0].tile_size;
+        int x1 = (window_size.x - (tileSize * (N - 1))) / 2;
+        int y2 = (window_size.y - (tileSize * (N - 1))) / 2;
+
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < N; j++)
+                tileShapes[i][j].setPosition(x1 + j * tileSize, y2 + i * tileSize);
+    }
+
+    void update_values(const Tile &tile)
+    {
+        for (int i = 0; i < N; i++)
             for (int j = 0; j < N; j++)
             {
-                rt.draw(tilesShapes[i][j], states);
-                rt.draw(tile_numbers[i][j], states);
-                rt.draw(tile_fgh[i][j], states);
+                tileShapes[i][j].update_values(
+                    tile.tiles[i][j],
+                    tile.H[i][j],
+                    max_dist);
             }
-        }
+    }
+
+    void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
+    {
+        states.transform *= getTransform();
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < N; j++)
+                rt.draw(tileShapes[i][j], states);
     }
 };

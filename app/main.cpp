@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include <thread>
 
-TileShape tileShape;
+TileGrid tileShape;
 Tile goal;
-
+TileControls *tileControls;
 /***
  * Expands the node and adds it to the opened list
  */
@@ -46,7 +46,7 @@ void display_list_reversed(Tile *node)
 	{
 		display_list_reversed(node->previous);
 		tileShape.update_values(*node);
-		sleep(1);
+		usleep(100000 * (tileControls->solution_speed_slider.max - tileControls->solution_speed_slider.current));
 	}
 }
 
@@ -90,7 +90,9 @@ bool solve_puzzle()
 		}
 		expand(current);
 		current->close();
-		// usleep(10000);
+		usleep(10000 * (tileControls->solving_speed_slider.max - tileControls->solving_speed_slider.current));
+
+		// usleep(1000000);
 	}
 	if (!solvable)
 	{
@@ -121,10 +123,10 @@ int main()
 	sf::Font roboto_font;
 	roboto_font.loadFromFile("Assets\\Fonts\\roboto.ttf");
 
-	tileShape.set_font(roboto_font);
+	tileShape.setFont(roboto_font);
 	tileShape.center_tiles(window.getSize());
 
-	TileControls tileControls(roboto_font);
+	tileControls = new TileControls(roboto_font);
 	// tileControls.setFont(roboto_font);
 
 	// starting solveing function
@@ -145,29 +147,37 @@ int main()
 			}
 			if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
 			{
-				if (!tileControls.start_pressed && tileControls.start.within(sf::Mouse::getPosition(window)))
+				if (!tileControls->start_pressed && tileControls->start.within(sf::Mouse::getPosition(window)))
 				{
-					tileControls.start_pressed = true;
+					tileControls->start_pressed = true;
 					solve = std::thread(&solve_puzzle);
 					solve.detach();
 				}
-				if (!tileControls.shuffle_pressed && tileControls.shuffle.within(sf::Mouse::getPosition(window)))
+				if (!tileControls->shuffle_pressed && tileControls->shuffle.within(sf::Mouse::getPosition(window)))
 				{
-					tileControls.shuffle_pressed = true;
+					//tileControls->shuffle_pressed = true;
 					shuffle = std::thread(&shuffle_tile, Tile::opened,
-										  tileControls.shuffle_slider.current);
+										  tileControls->shuffle_slider.current);
 					shuffle.detach();
 				}
-				if (tileControls.shuffle_slider.within(sf::Mouse::getPosition(window)))
+				if (tileControls->shuffle_slider.within(sf::Mouse::getPosition(window)))
 				{
-					tileControls.shuffle_slider.setValue(sf::Mouse::getPosition(window));
+					tileControls->shuffle_slider.setValue(sf::Mouse::getPosition(window));
+				}
+				if (tileControls->solving_speed_slider.within(sf::Mouse::getPosition(window)))
+				{
+					tileControls->solving_speed_slider.setValue(sf::Mouse::getPosition(window));
+				}
+				if (tileControls->solution_speed_slider.within(sf::Mouse::getPosition(window)))
+				{
+					tileControls->solution_speed_slider.setValue(sf::Mouse::getPosition(window));
 				}
 			}
 		}
 
 		window.clear();
 		window.draw(tileShape);
-		window.draw(tileControls);
+		window.draw(*tileControls);
 		window.display();
 	}
 	solve.join();
