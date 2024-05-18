@@ -87,10 +87,7 @@ public:
 
     int max_dist;
 
-    TileGrid(/*const sf::Font &font*/)
-    {
-        max_dist = 2 * (N - 1);
-    }
+    TileGrid() { max_dist = 2 * (N - 1); }
 
     TileGrid(const sf::Font &font)
     {

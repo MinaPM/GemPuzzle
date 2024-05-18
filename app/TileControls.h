@@ -57,6 +57,7 @@ public:
     sf::RectangleShape range_rect, current_rect;
     int min, max, current, width;
     bool enabled;
+    bool mouseClicked;
 
     Slider(const sf::Font &font, const std::string &text, int textSize, int current, int min, int max)
     {
@@ -65,6 +66,7 @@ public:
         this->min = min;
         this->max = max;
         this->current = current;
+        mouseClicked = 0;
         slider_text.setFont(font);
         slider_text.setCharacterSize(textSize);
         slider_text.setString(text);
@@ -76,9 +78,11 @@ public:
         current_text.setFillColor(sf::Color::White);
 
         range_rect.setFillColor(sf::Color::White);
+        range_rect.setOutlineColor(sf::Color::Red);
+        range_rect.setOutlineThickness(3);
         range_rect.setSize(sf::Vector2f(width, 20));
 
-        range_rect.setFillColor(sf::Color::Red);
+        current_rect.setFillColor(sf::Color::Red);
         current_rect.setSize(sf::Vector2f((float)((current - min) / (float)(max - min)) * width, 20));
 
         setPosition(0, 0);
@@ -87,14 +91,20 @@ public:
     void setPosition(float x, float y)
     {
         slider_text.setPosition(x, y);
-        range_rect.setPosition(x, y + slider_text.getCharacterSize() + 5);
+        range_rect.setPosition(x, y + slider_text.getCharacterSize() + 10);
         current_rect.setPosition(range_rect.getPosition());
         current_text.setPosition(range_rect.getPosition().x + range_rect.getGlobalBounds().width + 5, range_rect.getPosition().y);
     }
 
-    bool within(sf::Vector2i point)
+    bool clickWithin(sf::Vector2i point)
     {
-        return range_rect.getGlobalBounds().contains((sf::Vector2f)point);
+        if (range_rect.getGlobalBounds().contains((sf::Vector2f)point))
+        {
+            mouseClicked = true;
+            return true;
+        }
+        else
+            return false;
     }
 
     void enable()
@@ -107,19 +117,17 @@ public:
     void disable()
     {
         enabled = false;
-        // range_rect.setFillColor(sf::Color::White);
         range_rect.setFillColor(sf::Color(50, 50, 50));
     }
 
     void setValue(sf::Vector2i point)
     {
-        if (!enabled)
+        if (!enabled || !mouseClicked)
             return;
-        current_rect.setSize(sf::Vector2f(
-            std::min(
-                width, point.x - (int)current_rect.getGlobalBounds().left),
-            20));
-        current = ((float)std::min(width, point.x - (int)current_rect.getGlobalBounds().left) / width) * (max - min) + min;
+        float lenght = std::max(0.f, std::min((float)width, point.x - current_rect.getGlobalBounds().left));
+
+        current_rect.setSize(sf::Vector2f(lenght, current_rect.getSize().y));
+        current = (lenght / width) * (max - min) + min;
         current_text.setString(std::to_string(current));
     }
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
@@ -140,18 +148,20 @@ public:
     bool start_pressed;
     Button shuffle;
     bool shuffle_pressed;
+    bool isMouseClicked;
     Slider shuffle_slider;
     Slider solving_speed_slider;
     Slider solution_speed_slider;
     TileControls(const sf::Font &font)
         : start(font, "Start", 20),
           shuffle(font, "Shuffle", 20),
-          shuffle_slider(font, "Shuffle intensity", 20, 30, 5, 61),
+          shuffle_slider(font, "Shuffle intensity", 20, 30, 4, 100),
           solving_speed_slider(font, "Solving speed", 20, 3, 1, 10),
           solution_speed_slider(font, "Solution speed", 20, 1, 1, 10)
     {
         start_pressed = 0;
         shuffle_pressed = 0;
+        isMouseClicked = 0;
         shuffle.setPosition(20, 5);
         start.setPosition(20, 40);
         shuffle_slider.setPosition(20, 100);
@@ -164,6 +174,27 @@ public:
         return;
     }
 
+    void mouseClicked(sf::Vector2i point)
+    {
+        isMouseClicked = true;
+        shuffle_slider.clickWithin(point);
+        solving_speed_slider.clickWithin(point);
+        solution_speed_slider.clickWithin(point);
+    }
+    void mouseReleased()
+    {
+        isMouseClicked = false;
+        shuffle_slider.mouseClicked = false;
+        solving_speed_slider.mouseClicked = false;
+        solution_speed_slider.mouseClicked = false;
+    }
+
+    void update(sf::Vector2i point)
+    {
+        shuffle_slider.setValue(point);
+        solving_speed_slider.setValue(point);
+        solution_speed_slider.setValue(point);
+    }
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
     {
         states.transform *= getTransform();

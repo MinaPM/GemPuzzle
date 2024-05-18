@@ -134,10 +134,10 @@ int main()
 	std::thread shuffle;
 
 	// event for handling input
-	sf::Event event;
 
 	while (true)
 	{
+		sf::Event event;
 		while (window.pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed)
@@ -145,8 +145,9 @@ int main()
 				window.close();
 				return 0;
 			}
-			if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+			if (event.type == sf::Event::MouseButtonPressed)
 			{
+				tileControls->mouseClicked(sf::Mouse::getPosition(window));
 				if (!tileControls->start_pressed && tileControls->start.within(sf::Mouse::getPosition(window)))
 				{
 					tileControls->start_pressed = true;
@@ -155,23 +156,19 @@ int main()
 				}
 				if (!tileControls->shuffle_pressed && tileControls->shuffle.within(sf::Mouse::getPosition(window)))
 				{
-					//tileControls->shuffle_pressed = true;
+					// tileControls->shuffle_pressed = true;
 					shuffle = std::thread(&shuffle_tile, Tile::opened,
 										  tileControls->shuffle_slider.current);
 					shuffle.detach();
 				}
-				if (tileControls->shuffle_slider.within(sf::Mouse::getPosition(window)))
-				{
-					tileControls->shuffle_slider.setValue(sf::Mouse::getPosition(window));
-				}
-				if (tileControls->solving_speed_slider.within(sf::Mouse::getPosition(window)))
-				{
-					tileControls->solving_speed_slider.setValue(sf::Mouse::getPosition(window));
-				}
-				if (tileControls->solution_speed_slider.within(sf::Mouse::getPosition(window)))
-				{
-					tileControls->solution_speed_slider.setValue(sf::Mouse::getPosition(window));
-				}
+			}
+			if (event.type == sf::Event::MouseButtonReleased)
+			{
+				tileControls->mouseReleased();
+			}
+			if (event.type == sf::Event::MouseMoved || event.type == sf::Event::MouseButtonPressed)
+			{
+				tileControls->update(sf::Mouse::getPosition(window));
 			}
 		}
 
