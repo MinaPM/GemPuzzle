@@ -1,6 +1,6 @@
 #include "TileShape.h"
 #include "TileControls.h"
-#include <unistd.h>
+#include <chrono>
 #include <thread>
 
 TileGrid tileShape;
@@ -46,15 +46,19 @@ void display_list_reversed(Tile *node)
 	{
 		display_list_reversed(node->previous);
 		tileShape.update_values(*node);
-		usleep(100000 * (tileControls->solution_speed_slider.max - tileControls->solution_speed_slider.current));
+		std::this_thread::sleep_for(std::chrono::milliseconds(100 * (tileControls->solution_speed_slider.max - tileControls->solution_speed_slider.current)));
 	}
 }
 
-void shuffle_tile(Tile *tile, int level)
+void shuffle_tile(Tile *tile)
 {
+	int level = tileControls->shuffle_slider.current;
 	if (tile == nullptr || level < 1)
+	{
+		tileControls->start.enable();
+		tileControls->shuffle_slider.enable();
 		return;
-
+	}
 	int mv;
 	while (level--)
 	{
@@ -66,8 +70,10 @@ void shuffle_tile(Tile *tile, int level)
 		}
 
 		tileShape.update_values(*tile);
-		usleep(10000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+	tileControls->shuffle_slider.enable();
+	tileControls->start.enable();
 }
 
 bool solve_puzzle()
@@ -81,16 +87,20 @@ bool solve_puzzle()
 		current = Tile::opened;
 		Tile::opened = Tile::opened->next;
 		tileShape.update_values(*current);
+		std::this_thread::sleep_for(std::chrono::milliseconds(
+			100 * (tileControls->solving_speed_slider.max -
+				  tileControls->solving_speed_slider.current)));
 		if (*current == goal)
 		{
 			int pathlength = 0;
 			solvable = true;
 			display_list_reversed(current);
+			tileControls->shuffle.enable();
+
 			return true;
 		}
 		expand(current);
 		current->close();
-		usleep(10000 * (tileControls->solving_speed_slider.max - tileControls->solving_speed_slider.current));
 
 		// usleep(1000000);
 	}
@@ -98,6 +108,7 @@ bool solve_puzzle()
 	{
 		std::cout << "No solution found\n";
 	}
+	tileControls->shuffle.enable();
 	return false;
 }
 
@@ -148,18 +159,16 @@ int main()
 			if (event.type == sf::Event::MouseButtonPressed)
 			{
 				tileControls->mouseClicked(sf::Mouse::getPosition(window));
-				if (!tileControls->start_pressed && tileControls->start.within(sf::Mouse::getPosition(window)))
+				if (tileControls->start.within(sf::Mouse::getPosition(window)))
 				{
-					tileControls->start_pressed = true;
-					solve = std::thread(&solve_puzzle);
-					solve.detach();
+					tileControls->shuffle.disable();
+					tileControls->start.run(solve_puzzle);
 				}
-				if (!tileControls->shuffle_pressed && tileControls->shuffle.within(sf::Mouse::getPosition(window)))
+				if (tileControls->shuffle.within(sf::Mouse::getPosition(window)))
 				{
-					// tileControls->shuffle_pressed = true;
-					shuffle = std::thread(&shuffle_tile, Tile::opened,
-										  tileControls->shuffle_slider.current);
-					shuffle.detach();
+					tileControls->start.disable();
+					tileControls->shuffle_slider.disable();
+					tileControls->shuffle.run(shuffle_tile, Tile::opened);
 				}
 			}
 			if (event.type == sf::Event::MouseButtonReleased)

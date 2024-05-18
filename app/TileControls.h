@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <thread>
 
 class Button : public sf::Drawable, public sf::Transformable
 {
@@ -7,21 +8,22 @@ public:
     sf::Text button_text;
     sf::RectangleShape button_rect;
     bool enabled;
+    std::thread button_thread;
     void (*onclick)();
     Button(const sf::Font &font, const std::string &text, int size)
     {
-        enabled = true;
         button_text.setFont(font);
         button_text.setCharacterSize(size);
         button_text.setString(text);
-        button_text.setFillColor(sf::Color::Blue);
 
-        button_rect.setFillColor(sf::Color::White);
-        button_rect.setOutlineColor(sf::Color::Blue);
-        button_rect.setOutlineThickness(2);
+        enable();
+
+        // enabled = true;
+        // setColor(sf::Color::Blue, sf::Color::White, sf::Color::Blue);
 
         button_rect.setSize(sf::Vector2f(button_text.getLocalBounds().width + 10,
                                          button_text.getLocalBounds().height + 10));
+        button_rect.setOutlineThickness(2);
 
         setPosition(0, 0);
     }
@@ -39,13 +41,47 @@ public:
         rt.draw(button_text, states);
     }
 
-    void setOnclick(void (*func)())
+    void disable()
     {
-        onclick = func;
+        enabled = false;
+        setColor(sf::Color(50, 50, 50), sf::Color::White, sf::Color(50, 50, 50));
     }
+    void enable()
+    {
+        enabled = true;
+        setColor(sf::Color::Blue, sf::Color::White, sf::Color::Blue);
+    }
+
+    void setColor(sf::Color text, sf::Color fill, sf::Color outline)
+    {
+        button_text.setFillColor(text);
+        button_rect.setFillColor(fill);
+        button_rect.setOutlineColor(outline);
+    }
+
+    template <typename Func, typename... Args>
+    void run(Func function, Args... args)
+    {
+        if (!enabled)
+            return;
+        if (button_thread.joinable())
+            button_thread.join();
+
+        button_thread = std::thread(&Button::runFunc<Func, Args...>, this, function, args...);
+    }
+
     bool within(sf::Vector2i point)
     {
         return button_rect.getGlobalBounds().contains((sf::Vector2f)point);
+    }
+
+private:
+    template <typename Func, typename... Args>
+    void runFunc(Func function, Args... args)
+    {
+        disable();
+        function(args...);
+        enable();
     }
 };
 
@@ -70,21 +106,17 @@ public:
         slider_text.setFont(font);
         slider_text.setCharacterSize(textSize);
         slider_text.setString(text);
-        slider_text.setFillColor(sf::Color::White);
 
         current_text.setFont(font);
         current_text.setCharacterSize(textSize);
         current_text.setString(std::to_string(current));
-        current_text.setFillColor(sf::Color::White);
 
-        range_rect.setFillColor(sf::Color::White);
-        range_rect.setOutlineColor(sf::Color::Red);
         range_rect.setOutlineThickness(3);
         range_rect.setSize(sf::Vector2f(width, 20));
 
-        current_rect.setFillColor(sf::Color::Red);
         current_rect.setSize(sf::Vector2f((float)((current - min) / (float)(max - min)) * width, 20));
 
+        setColor(sf::Color::White, sf::Color::Red, sf::Color::White);
         setPosition(0, 0);
     }
 
@@ -110,14 +142,13 @@ public:
     void enable()
     {
         enabled = true;
-        // range_rect.setFillColor(sf::Color::White);
-        range_rect.setFillColor(sf::Color::Red);
+        setColor(sf::Color::White, sf::Color::Red, sf::Color::White);
     }
 
     void disable()
     {
         enabled = false;
-        range_rect.setFillColor(sf::Color(50, 50, 50));
+        setColor(sf::Color(100, 100, 100), sf::Color(100, 0, 0), sf::Color(100, 100, 100));
     }
 
     void setValue(sf::Vector2i point)
@@ -129,6 +160,15 @@ public:
         current_rect.setSize(sf::Vector2f(lenght, current_rect.getSize().y));
         current = (lenght / width) * (max - min) + min;
         current_text.setString(std::to_string(current));
+    }
+
+    void setColor(sf::Color fill, sf::Color outline, sf::Color text)
+    {
+        range_rect.setFillColor(fill);
+        range_rect.setOutlineColor(outline);
+        current_rect.setFillColor(outline);
+        current_text.setFillColor(text);
+        slider_text.setFillColor(text);
     }
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
     {
