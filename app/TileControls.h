@@ -196,7 +196,7 @@ public:
         : start(font, "Start", 20),
           shuffle(font, "Shuffle", 20),
           shuffle_slider(font, "Shuffle intensity", 20, 30, 4, 100),
-          solving_speed_slider(font, "Solving speed", 20, 3, 1, 10),
+          solving_speed_slider(font, "Solving speed", 20, 5, 1, 10),
           solution_speed_slider(font, "Solution speed", 20, 1, 1, 10)
     {
         start_pressed = 0;

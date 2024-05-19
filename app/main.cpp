@@ -1,4 +1,5 @@
 #include "TileShape.h"
+#include "TileData.h"
 #include "TileControls.h"
 #include <chrono>
 #include <thread>
@@ -6,6 +7,7 @@
 TileGrid tileShape;
 Tile goal;
 TileControls *tileControls;
+TileData *tileData;
 /***
  * Expands the node and adds it to the opened list
  */
@@ -78,7 +80,6 @@ void shuffle_tile(Tile *tile)
 
 bool solve_puzzle()
 {
-
 	bool solvable = false;
 	Tile *current;
 
@@ -87,9 +88,10 @@ bool solve_puzzle()
 		current = Tile::opened;
 		Tile::opened = Tile::opened->next;
 		tileShape.update_values(*current);
+		tileData->updateData(Tile::opened_count,Tile::closed_count,current->f, current->g, current->h);
 		std::this_thread::sleep_for(std::chrono::milliseconds(
 			100 * (tileControls->solving_speed_slider.max -
-				  tileControls->solving_speed_slider.current)));
+				   tileControls->solving_speed_slider.current)));
 		if (*current == goal)
 		{
 			int pathlength = 0;
@@ -101,8 +103,6 @@ bool solve_puzzle()
 		}
 		expand(current);
 		current->close();
-
-		// usleep(1000000);
 	}
 	if (!solvable)
 	{
@@ -138,14 +138,9 @@ int main()
 	tileShape.center_tiles(window.getSize());
 
 	tileControls = new TileControls(roboto_font);
-	// tileControls.setFont(roboto_font);
 
-	// starting solveing function
-	std::thread solve;
-	std::thread shuffle;
-
-	// event for handling input
-
+	tileData = new TileData(roboto_font);
+	tileData->setPosition(20, 500);
 	while (true)
 	{
 		sf::Event event;
@@ -184,8 +179,8 @@ int main()
 		window.clear();
 		window.draw(tileShape);
 		window.draw(*tileControls);
+		window.draw(*tileData);
 		window.display();
 	}
-	solve.join();
 	return 0;
 }
