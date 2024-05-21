@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include "tile.h"
 
 class TileShape : public sf::Drawable, public sf::Transformable
@@ -60,15 +61,15 @@ public:
         tile_numbers.setString(((tileNumber == 0) ? "" : std::to_string(tileNumber)));
         tile_fgh.setString(std::to_string(fghValue));
         if (tileNumber != 0)
-            square.setFillColor(sf::Color(
-                255,
-                255 - (255 * fghValue / max_dist),
-                255 - (255 * fghValue / max_dist)));
+            setColor(sf::Color(255,
+                               255 - (255 * fghValue / max_dist),
+                               255 - (255 * fghValue / max_dist)));
         else
-            square.setFillColor(sf::Color::Yellow);
+            setColor(sf::Color::Yellow);
 
         center_text();
     }
+    void setColor(sf::Color color) { square.setFillColor(color); }
 
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
     {
@@ -82,18 +83,32 @@ public:
 class TileGrid : public sf::Drawable,
                  public sf::Transformable
 {
+    // sound disabled, it needs to be revisited
 public:
     TileShape tileShapes[N][N];
-
+    // sf::Sound beep;
+    // float base_pitch, pitch;
     int max_dist;
+    const bool *soundCheck;
 
-    TileGrid() { max_dist = 2 * (N - 1); }
+    TileGrid()
+    {
+        max_dist = 2 * (N - 1);
+        // pitch = 0;
+    }
 
-    TileGrid(const sf::Font &font)
+    TileGrid(const bool &soundCheck)
     {
         TileGrid();
+        this->soundCheck = &soundCheck;
+    }
+
+    TileGrid(const sf::Font &font, const bool &soundCheck) : TileGrid(soundCheck)
+    {
         setFont(font);
     }
+
+    // void setSoundBuffer(const sf::SoundBuffer &buffer) { beep.setBuffer(buffer); }
 
     void setFont(const sf::Font &font)
     {
@@ -113,6 +128,15 @@ public:
                 tileShapes[i][j].setPosition(x1 + j * tileSize, y2 + i * tileSize);
     }
 
+    // void setBasePitch(float p) { base_pitch = p; }
+    // void setPitch(int h)
+    // {
+    //     h = std::min(base_pitch, (float)h);
+    //     beep.setPitch((-8 * (float)h) / base_pitch + 4);
+    // }
+
+    // void bindSoundCheck(const bool &soundcheck) {soundChe}
+
     void update_values(const Tile &tile)
     {
         for (int i = 0; i < N; i++)
@@ -123,6 +147,8 @@ public:
                     tile.H[i][j],
                     max_dist);
             }
+        // if (*soundCheck)
+        //     beep.play();
     }
 
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override

@@ -3,11 +3,12 @@
 #include "TileControls.h"
 #include <chrono>
 #include <thread>
+#include <random>
 
 TileGrid tileShape;
-Tile goal;
 TileControls *tileControls;
 TileData *tileData;
+Tile goal;
 /***
  * Expands the node and adds it to the opened list
  */
@@ -24,6 +25,7 @@ void expand(Tile *node)
 			(newMove->*moves[1][i])();
 
 			// if it is a duplicate found in opened or closed
+			//add threads here
 			if (newMove->found_in(Tile::opened) ||
 				newMove->found_in(Tile::closed))
 			{ // delete the move
@@ -47,7 +49,9 @@ void display_list_reversed(Tile *node)
 	else
 	{
 		display_list_reversed(node->previous);
+		// tileShape.setPitch(node->h);
 		tileShape.update_values(*node);
+		tileData->updateData(Tile::opened_count, Tile::closed_count, node->f, node->g, node->h);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100 * (tileControls->solution_speed_slider.max - tileControls->solution_speed_slider.current)));
 	}
 }
@@ -61,10 +65,15 @@ void shuffle_tile(Tile *tile)
 		tileControls->shuffle_slider.enable();
 		return;
 	}
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> distrib(0, 3);
+
 	int mv;
 	while (level--)
 	{
-		mv = rand() % 4;
+		// mv = std::rand() % 4;
+		mv = distrib(gen);
 		if (!(tile->*moves[1][mv])())
 		{
 			level++;
@@ -82,13 +91,16 @@ bool solve_puzzle()
 {
 	bool solvable = false;
 	Tile *current;
+	// tileShape.setBasePitch(Tile::opened->h);
 
 	while (Tile::opened != NULL)
 	{
 		current = Tile::opened;
 		Tile::opened = Tile::opened->next;
+		// tileShape.setPitch(current->h);
 		tileShape.update_values(*current);
-		tileData->updateData(Tile::opened_count,Tile::closed_count,current->f, current->g, current->h);
+
+		tileData->updateData(Tile::opened_count, Tile::closed_count, current->f, current->g, current->h);
 		std::this_thread::sleep_for(std::chrono::milliseconds(
 			100 * (tileControls->solving_speed_slider.max -
 				   tileControls->solving_speed_slider.current)));
@@ -96,6 +108,7 @@ bool solve_puzzle()
 		{
 			int pathlength = 0;
 			solvable = true;
+			// tileShape.setBasePitch(Tile::opened->h);
 			display_list_reversed(current);
 			tileControls->shuffle.enable();
 
@@ -122,7 +135,7 @@ int main()
 	window.setFramerateLimit(30);
 
 	// setting the seed for the random function
-	srand(time(NULL));
+	std::srand(std::time(0));
 
 	// intit goal tile
 	goal = set_goal();
@@ -130,12 +143,19 @@ int main()
 	Tile::opened->update_fgh();
 	tileShape.update_values(*Tile::opened);
 
+	// loading sound
+	// sf::SoundBuffer buffer;
+	// if (!buffer.loadFromFile("Assets\\Audio\\beep.wav"))
+	// 	return -1;
+
 	// loading font
 	sf::Font roboto_font;
-	roboto_font.loadFromFile("Assets\\Fonts\\roboto.ttf");
+	if (!roboto_font.loadFromFile("Assets\\Fonts\\roboto.ttf"))
+		return -1;
 
 	tileShape.setFont(roboto_font);
 	tileShape.center_tiles(window.getSize());
+	// tileShape.setSoundBuffer(buffer);
 
 	tileControls = new TileControls(roboto_font);
 

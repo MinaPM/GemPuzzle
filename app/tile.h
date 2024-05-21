@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <string.h>
 
-#define N 5
+#define N 4
 #define NxN (N * N)
 
 class Tile
