@@ -2,33 +2,67 @@
 #include <thread>
 
 // template <typename Controlable>
-/*class Control : public sf::Drawable, public sf::Transformable
+class Control : public sf::Drawable, public sf::Transformable
 {
+public:
     sf::RectangleShape rectangle;
     sf::Text lable;
     // Controlable controlable;
-    bool enabled;
-
-    Control(){enabled=true;};
-
-    Control(const sf::Font &font)
+    bool enabled, clicked;
+    Control()
     {
-        Control();
+        enabled = true;
+        clicked = false;
+        lable.setCharacterSize(20);
+        rectangle.setOutlineThickness(3);
+    };
+    Control(const sf::Font &font) : Control()
+    {
         lable.setFont(font);
     }
+    Control(const sf::Font &font, const std::string &string, int characterSize = 20) : Control(font)
+    {
+        lable.setString(string);
+        lable.setCharacterSize(characterSize);
+    }
 
-
-    void setColor(sf::Color rectangleFill, sf::Color rectangleOutline, sf::Color text) {
+    void setFont(const sf::Font &font) { lable.setFont(font); }
+    void setString(const std::string &string) { lable.setString(string); }
+    void setColor(sf::Color rectangleFill, sf::Color rectangleOutline, sf::Color text)
+    {
         rectangle.setFillColor(rectangleFill);
         rectangle.setOutlineColor(rectangleOutline);
         lable.setFillColor(text);
     }
 
     bool within(sf::Vector2i point) { return rectangle.getGlobalBounds().contains((sf::Vector2f)point); }
+    bool clickWithin(sf::Vector2i point) { return clicked = within(point); }
+    void mouseReleased() { clicked = false; }
 
     bool isEnabled() { return enabled; }
-    void enable() { enabled = true; }
-    void disable() { enabled = false; }
+    void enable()
+    {
+        enabled = true;
+        sf::Color c1(rectangle.getFillColor()), c2(rectangle.getOutlineColor()), c3(lable.getFillColor());
+        c1.a = 255;
+        c2.a = 255;
+        c3.a = 255;
+        setColor(c1, c2, c3);
+    }
+    void disable()
+    {
+        enabled = false;
+        sf::Color c1(rectangle.getFillColor()), c2(rectangle.getOutlineColor()), c3(lable.getFillColor());
+        c1.a = 124;
+        c2.a = c1.a;
+        c3.a = c1.a;
+        setColor(c1, c2, c3);
+    }
+
+    void alignLeft()
+    {
+        lable.setPosition(rectangle.getPosition().x, lable.getPosition().y);
+    }
 
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
     {
@@ -36,63 +70,25 @@
         rt.draw(rectangle, states);
         rt.draw(lable, states);
     }
-};*/
+};
 
-class Button : public sf::Drawable, public sf::Transformable
+class Button : public Control
 {
 public:
-    sf::Text button_text;
-    sf::RectangleShape button_rect;
-    bool enabled;
     std::thread button_thread;
     void (*onclick)();
-    Button(const sf::Font &font, const std::string &text, int size)
+    Button(const sf::Font &font, const std::string &text, int size) : Control(font, text, size)
     {
-        button_text.setFont(font);
-        button_text.setCharacterSize(size);
-        button_text.setString(text);
-
-        enable();
-
-        // enabled = true;
-        // setColor(sf::Color::Blue, sf::Color::White, sf::Color::Blue);
-
-        button_rect.setSize(sf::Vector2f(button_text.getLocalBounds().width + 10,
-                                         button_text.getLocalBounds().height + 10));
-        button_rect.setOutlineThickness(2);
-
+        rectangle.setSize(sf::Vector2f(lable.getLocalBounds().width + 10,
+                                       lable.getLocalBounds().height + 10));
         setPosition(0, 0);
+        setColor(sf::Color::White, sf::Color::Red, sf::Color::Red);
     }
 
     void setPosition(float x, float y)
     {
-        button_rect.setPosition(x, y);
-        button_text.setPosition(button_rect.getPosition());
-    }
-
-    void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
-    {
-        states.transform *= getTransform();
-        rt.draw(button_rect, states);
-        rt.draw(button_text, states);
-    }
-
-    void disable()
-    {
-        enabled = false;
-        setColor(sf::Color(50, 50, 50), sf::Color::White, sf::Color(50, 50, 50));
-    }
-    void enable()
-    {
-        enabled = true;
-        setColor(sf::Color::Blue, sf::Color::White, sf::Color::Blue);
-    }
-
-    void setColor(sf::Color text, sf::Color fill, sf::Color outline)
-    {
-        button_text.setFillColor(text);
-        button_rect.setFillColor(fill);
-        button_rect.setOutlineColor(outline);
+        rectangle.setPosition(x, y);
+        lable.setPosition(rectangle.getPosition());
     }
 
     template <typename Func, typename... Args>
@@ -106,11 +102,6 @@ public:
         button_thread = std::thread(&Button::runFunc<Func, Args...>, this, function, args...);
     }
 
-    bool within(sf::Vector2i point)
-    {
-        return button_rect.getGlobalBounds().contains((sf::Vector2f)point);
-    }
-
 private:
     template <typename Func, typename... Args>
     void runFunc(Func function, Args... args)
@@ -121,35 +112,24 @@ private:
     }
 };
 
-class Slider : public sf::Drawable, public sf::Transformable
+class Slider : public Control
 {
 
 public:
-    sf::Text slider_text, current_text;
-    sf::RectangleShape range_rect, current_rect;
+    sf::Text current_text;
+    sf::RectangleShape current_rect;
     int min, max, current, width;
-    bool enabled;
-    bool mouseClicked;
 
-    Slider(const sf::Font &font, const std::string &text, int textSize, int current, int min, int max)
+    Slider(const sf::Font &font, const std::string &text, int size, int current, int min, int max) : Control(font, text, size)
     {
-        enabled = true;
         width = 100;
         this->min = min;
         this->max = max;
         this->current = current;
-        mouseClicked = 0;
-        slider_text.setFont(font);
-        slider_text.setCharacterSize(textSize);
-        slider_text.setString(text);
-
-        current_text.setFont(font);
-        current_text.setCharacterSize(textSize);
+        current_text = sf::Text(lable);
         current_text.setString(std::to_string(current));
 
-        range_rect.setOutlineThickness(3);
-        range_rect.setSize(sf::Vector2f(width, 20));
-
+        rectangle.setSize(sf::Vector2f(width, 20));
         current_rect.setSize(sf::Vector2f((float)((current - min) / (float)(max - min)) * width, 20));
 
         setColor(sf::Color::White, sf::Color::Red, sf::Color::White);
@@ -158,152 +138,111 @@ public:
 
     void setPosition(float x, float y)
     {
-        slider_text.setPosition(x, y);
-        range_rect.setPosition(x, y + slider_text.getCharacterSize() + 10);
-        current_rect.setPosition(range_rect.getPosition());
-        current_text.setPosition(range_rect.getPosition().x + range_rect.getGlobalBounds().width + 5, range_rect.getPosition().y);
+        lable.setPosition(x, y);
+        rectangle.setPosition(x, y + lable.getCharacterSize() + 10);
+        current_rect.setPosition(rectangle.getPosition());
+        current_text.setPosition(rectangle.getPosition().x + width + 5, rectangle.getPosition().y);
     }
 
-    bool clickWithin(sf::Vector2i point)
+    void setFont(const sf::Font &font)
     {
-        if (range_rect.getGlobalBounds().contains((sf::Vector2f)point))
-        {
-            mouseClicked = true;
-            return true;
-        }
-        else
-            return false;
-    }
-
-    void enable()
-    {
-        enabled = true;
-        setColor(sf::Color::White, sf::Color::Red, sf::Color::White);
-    }
-
-    void disable()
-    {
-        enabled = false;
-        setColor(sf::Color(100, 100, 100), sf::Color(100, 0, 0), sf::Color(100, 100, 100));
+        Control::setFont(font);
+        current_text.setFont(font);
     }
 
     void setValue(sf::Vector2i point)
     {
-        if (!enabled || !mouseClicked)
+        if (!enabled || !clicked)
             return;
-        float lenght = std::max(0.f, std::min((float)width, point.x - current_rect.getGlobalBounds().left));
 
+        float lenght = std::max(0.f, std::min((float)width, point.x - current_rect.getGlobalBounds().left));
         current_rect.setSize(sf::Vector2f(lenght, current_rect.getSize().y));
         current = (lenght / width) * (max - min) + min;
         current_text.setString(std::to_string(current));
     }
 
+    void enable()
+    {
+        Control::enable();
+        setColor(rectangle.getFillColor(), rectangle.getOutlineColor(), lable.getFillColor());
+    }
+    void disable()
+    {
+        Control::disable();
+        setColor(rectangle.getFillColor(), rectangle.getOutlineColor(), lable.getFillColor());
+    }
+
     void setColor(sf::Color fill, sf::Color outline, sf::Color text)
     {
-        range_rect.setFillColor(fill);
-        range_rect.setOutlineColor(outline);
+        Control::setColor(fill, outline, text);
         current_rect.setFillColor(outline);
         current_text.setFillColor(text);
-        slider_text.setFillColor(text);
     }
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
     {
+        Control::draw(rt, states);
         states.transform *= getTransform();
-        rt.draw(slider_text, states);
-        rt.draw(range_rect, states);
         rt.draw(current_rect, states);
         rt.draw(current_text, states);
     }
 };
 
-class CheckBox : public sf::Drawable, public sf::Transformable
+class CheckBox : public Control
 {
 
 public:
-    sf::Text check_text;
-    sf::RectangleShape check_rect;
     sf::CircleShape check_circle;
-    bool enabled, status;
-    CheckBox(const sf::Font &font, const std::string &text, int size, bool status = false)
+    bool status;
+    CheckBox(const sf::Font &font, const std::string &text, int size, bool status = false) : Control(font, text, size)
     {
-        check_text.setFont(font);
-        check_text.setCharacterSize(size);
-        check_text.setString(text);
-
         this->status = status;
-
-        enable();
-
-        // enabled = true;
-        setColor(sf::Color::White, sf::Color::White, sf::Color::Blue);
-
-        check_rect.setSize(sf::Vector2f(15, 15));
-        check_circle.setRadius(7.5);
+        rectangle.setSize(sf::Vector2f(15, 15));
+        check_circle.setRadius(rectangle.getSize().x / 2);
         check_circle.setFillColor(sf::Color::Red);
-        check_rect.setOutlineThickness(2);
-
         setPosition(0, 0);
     }
 
     void setPosition(float x, float y)
     {
-        check_rect.setPosition(x, y);
-        check_circle.setPosition(check_rect.getPosition());
-        check_text.setPosition(check_rect.getPosition().x + check_rect.getGlobalBounds().width + 5, check_rect.getPosition().y);
+        rectangle.setPosition(x, y);
+        check_circle.setPosition(rectangle.getPosition());
+        lable.setPosition(rectangle.getPosition().x + rectangle.getGlobalBounds().width + 5,
+                          rectangle.getPosition().y - lable.getGlobalBounds().height / 2);
     }
 
-    void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
-    {
-        states.transform *= getTransform();
-        rt.draw(check_rect, states);
-        if (status)
-            rt.draw(check_circle, states);
-
-        rt.draw(check_text, states);
-    }
-
-    void disable()
-    {
-        enabled = false;
-        setColor(sf::Color(50, 50, 50), sf::Color::White, sf::Color(50, 50, 50));
-    }
     void enable()
     {
         enabled = true;
         setColor(sf::Color::Blue, sf::Color::White, sf::Color::Blue);
     }
-
-    void setColor(sf::Color text, sf::Color fill, sf::Color outline)
+    void disable()
     {
-        check_text.setFillColor(text);
-        check_rect.setFillColor(fill);
-        check_rect.setOutlineColor(outline);
+        enabled = false;
+        setColor(sf::Color(50, 50, 50), sf::Color::White, sf::Color(50, 50, 50));
+    }
+
+    void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
+    {
+        Control::draw(rt, states);
+        states.transform *= getTransform();
+        if (status)
+            rt.draw(check_circle, states);
+    }
+
+    void setColor(sf::Color fill, sf::Color outline, sf::Color text)
+    {
+        Control::setColor(fill, outline, text);
+        check_circle.setFillColor(outline);
     }
 
     const bool &bindStatus() { return status; }
 
-    void toggle()
-    {
-        // check if unchecked and vice versa
-        status = !status;
-    }
+    void toggle() { status = !status; }
 
-    void ckeck()
-    {
-        status = true;
-        // draw the circle
-    }
+    void ckeck() { status = true; }
 
-    void unckeck()
-    {
-        status = false;
-        // dont draw the circle
-    }
+    void unckeck() { status = false; }
 
-    bool within(sf::Vector2i point)
-    {
-        return check_rect.getGlobalBounds().contains((sf::Vector2f)point);
-    }
     bool clickWithin(sf::Vector2i point)
     {
         if (within(point))
@@ -321,10 +260,7 @@ class TileControls : public sf::Drawable,
 {
 public:
     Button start;
-    bool start_pressed;
     Button shuffle;
-    bool shuffle_pressed;
-    bool isMouseClicked;
     Slider shuffle_slider;
     Slider solving_speed_slider;
     Slider solution_speed_slider;
@@ -337,9 +273,7 @@ public:
           solution_speed_slider(font, "Solution speed", 20, 1, 1, 10),
           sound_check(font, "Sounds", 20, true)
     {
-        start_pressed = 0;
-        shuffle_pressed = 0;
-        isMouseClicked = 0;
+
         sound_check.setPosition(20, 5);
         shuffle.setPosition(20, 40);
         start.setPosition(shuffle.getPosition().x + 100, 40);
@@ -348,14 +282,8 @@ public:
         solution_speed_slider.setPosition(20, 260);
     }
 
-    void setFont(const sf::Font &font)
-    {
-        return;
-    }
-
     void mouseClicked(sf::Vector2i point)
     {
-        isMouseClicked = true;
         shuffle_slider.clickWithin(point);
         solving_speed_slider.clickWithin(point);
         solution_speed_slider.clickWithin(point);
@@ -363,10 +291,9 @@ public:
     }
     void mouseReleased()
     {
-        isMouseClicked = false;
-        shuffle_slider.mouseClicked = false;
-        solving_speed_slider.mouseClicked = false;
-        solution_speed_slider.mouseClicked = false;
+        shuffle_slider.mouseReleased();
+        solving_speed_slider.mouseReleased();
+        solution_speed_slider.mouseReleased();
     }
 
     void update(sf::Vector2i point)
@@ -375,6 +302,7 @@ public:
         solving_speed_slider.setValue(point);
         solution_speed_slider.setValue(point);
     }
+
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
     {
         states.transform *= getTransform();

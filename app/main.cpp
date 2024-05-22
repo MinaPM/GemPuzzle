@@ -25,7 +25,7 @@ void expand(Tile *node)
 			(newMove->*moves[1][i])();
 
 			// if it is a duplicate found in opened or closed
-			//add threads here
+			// add threads here
 			if (newMove->found_in(Tile::opened) ||
 				newMove->found_in(Tile::closed))
 			{ // delete the move
@@ -161,6 +161,7 @@ int main()
 
 	tileData = new TileData(roboto_font);
 	tileData->setPosition(20, 500);
+	
 	while (true)
 	{
 		sf::Event event;
