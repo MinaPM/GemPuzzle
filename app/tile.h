@@ -1,23 +1,26 @@
 #include <iostream>
 #include <iomanip>
 #include <string.h>
+#include <thread>
 
 #define N 4
 #define NxN (N * N)
+// higher N values (>15) require a larger data type
+typedef unsigned char TileType;
 
 class Tile
 {
 public:
-    static int goal_rows[NxN];
-    static int goal_columns[NxN];
+    static TileType goal_rows[NxN];
+    static TileType goal_columns[NxN];
     static Tile *opened;
     static Tile *closed;
     static int closed_count;
     static int opened_count;
 
-    int tiles[N][N];
-    int zero_row;
-    int zero_column;
+    TileType tiles[N][N];
+    TileType zero_row;
+    TileType zero_column;
     int f, g, h, H[N][N];
     class Tile *previous;
     class Tile *next;
@@ -39,9 +42,9 @@ public:
      *
      * @param tiles the array of tiles
      */
-    Tile(int tiles[N][N])
+    Tile(TileType tiles[N][N])
     {
-        memcpy(this->tiles, tiles, sizeof(int) * NxN);
+        memcpy(this->tiles, tiles, sizeof(TileType) * NxN);
         for (int i = 0; i < N; i++)
             for (int j = 0; j < N; j++)
                 if (this->tiles[i][j] == 0)
@@ -64,8 +67,8 @@ public:
      */
     Tile(const Tile &tile)
     {
-        memcpy(tiles, tile.tiles, sizeof(int) * NxN);
-        memcpy(H, tile.H, sizeof(int) * NxN);
+        memcpy(tiles, tile.tiles, sizeof(TileType) * NxN);
+        memcpy(H, tile.H, sizeof(tile.H[0][0]) * NxN);
         zero_row = tile.zero_row;
         zero_column = tile.zero_column;
         f = tile.f;
@@ -80,9 +83,9 @@ public:
      *
      * @param tiles the array of tiles
      */
-    void set_array(int tiles[N][N])
+    void set_array(TileType tiles[N][N])
     {
-        memcpy(this->tiles, tiles, sizeof(int) * NxN);
+        memcpy(this->tiles, tiles, sizeof(TileType) * NxN);
         for (int i = 0; i < N; i++)
             for (int j = 0; j < N; j++)
                 if (this->tiles[i][j] == 0)
@@ -246,6 +249,83 @@ public:
         }
         return false;
     }
+    
+    /**
+     * Checks if the tile is found in Opened list
+     *
+     * @param flag true if tile is found
+     */
+    void found_in_opened(bool *flag)
+    {
+        if (this == nullptr)
+        {
+            *flag = false;
+            return;
+        }
+        Tile *list = opened;
+
+        while (list != nullptr)
+        {
+            if (this == list)
+            {
+                *flag = true;
+                return;
+            }
+
+            list = list->next;
+        }
+        *flag = false;
+    }
+
+    /**
+     * Checks if the tile is found in Closed list
+     *
+     * @param flag true if tile is found
+     */
+    void found_in_closed(bool *flag)
+    {
+        if (this == nullptr)
+        {
+            *flag = false;
+            return;
+        }
+        Tile *list = closed;
+
+        while (list != nullptr)
+        {
+            if (this == list)
+            {
+                *flag = true;
+                return;
+            }
+
+            list = list->next;
+        }
+        *flag = false;
+    }
+    
+    /**
+     * Checks if the tile is duplicate
+     *
+     * @param use_threads determines weather or not threads are to be used
+     */
+    bool is_duplicate(bool use_threads = false)
+    {
+        bool found_in_closed = false, found_in_opened = false;
+        if (use_threads)
+        {
+           std::thread openThread = std::thread(Tile::found_in_opened, this, &found_in_opened);
+           std::thread closedThread = std::thread(Tile::found_in_closed, this, &found_in_closed);
+            openThread.join();
+            closedThread.join();
+        }
+        else
+        {
+            this->found_in_closed(&found_in_closed);
+            this->found_in_opened(&found_in_opened);
+        }
+        return found_in_closed || found_in_opened;
+    }
 
     /**
      * Prints the tiles
@@ -255,30 +335,30 @@ public:
         for (int i = 0; i < N; i++)
         {
             for (int k = 0; k < N; k++)
-            {
                 std::cout << "|----";
-            }
-            std::cout << (i == 0 ? "|\n" : "|\n");
+
+            std::cout << "|\n";
 
             for (int j = 0; j < N; j++)
             {
+                std::cout << "|";
+
                 if (tiles[i][j])
-                    std::cout << "| " << std::setw(2) << tiles[i][j] << (j < N - 1 ? " " : " |\n");
+                    std::cout << " " << std::setw(2) << (int)tiles[i][j] << " ";
                 else
-                {
-                    std::cout << "|" << "||||" << (j < N - 1 ? "" : "|\n");
-                }
+                    std::cout << "||||";
+
+                std::cout << (j < N - 1 ? "" : "|\n");
             }
         }
         for (int k = 0; k < N; k++)
-        {
             std::cout << "|----";
-        }
+
         std::cout << "|\n";
         std::cout << "f = " << f << "\tg = " << g << "\th = " << h << std::endl;
     }
 
-    bool operator==(Tile const &tile1) const { return !memcmp(tiles, tile1.tiles, sizeof(int) * NxN); }
+    bool operator==(Tile const &tile1) const { return !memcmp(tiles, tile1.tiles, sizeof(TileType) * NxN); }
     bool operator<(Tile const &tile1) const { return f < tile1.f; }
     bool operator>(Tile const &tile1) const { return f > tile1.f; }
 
@@ -296,7 +376,7 @@ private:
  */
 Tile initialize(char **argv)
 {
-    int tempgoal[N][N], i, j, k, col, row, index = 1;
+    TileType tempgoal[N][N], i, j, k, col, row, index = 1;
 
     for (i = 0; i < N; i++)
         for (j = 0; j < N; j++)
@@ -305,10 +385,10 @@ Tile initialize(char **argv)
     return Tile(tempgoal);
 }
 
-int Tile::goal_rows[NxN];
-int Tile::goal_columns[NxN];
-int Tile::closed_count=0;
-int Tile::opened_count=0;
+TileType Tile::goal_rows[NxN];
+TileType Tile::goal_columns[NxN];
+int Tile::closed_count = 0;
+int Tile::opened_count = 0;
 
 Tile *Tile::opened = nullptr;
 Tile *Tile::closed;
@@ -330,7 +410,7 @@ bool (Tile::*moves[2][4])() = {{&Tile::up_movable,
  */
 Tile set_goal()
 {
-    int tempgoal[N][N], i, col, row;
+    TileType tempgoal[N][N], i, col, row;
     Tile::goal_rows[0] = N - 1;
     Tile::goal_columns[0] = N - 1;
     for (i = 1; i < NxN; i++)

@@ -9,6 +9,7 @@ TileGrid tileShape;
 TileControls *tileControls;
 TileData *tileData;
 Tile goal;
+
 /***
  * Expands the node and adds it to the opened list
  */
@@ -93,6 +94,7 @@ bool solve_puzzle()
 	Tile *current;
 	// tileShape.setBasePitch(Tile::opened->h);
 
+	tileData->resetClock();
 	while (Tile::opened != NULL)
 	{
 		current = Tile::opened;
@@ -161,7 +163,7 @@ int main()
 
 	tileData = new TileData(roboto_font);
 	tileData->setPosition(20, 500);
-	
+
 	while (true)
 	{
 		sf::Event event;

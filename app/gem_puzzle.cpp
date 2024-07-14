@@ -1,33 +1,87 @@
 #include "tile.h"
 
+std::thread movesThreads[4];
+
+bool use_threads;
+
+Tile *temp_tiles[4];
+
+void createMove(Tile *node, int i)
+{
+    if (!(node->*moves[0][i])())
+    {
+        temp_tiles[i] = nullptr;
+        return;
+    }
+
+    temp_tiles[i] = new Tile(*node);
+    temp_tiles[i]->previous = node;
+    (temp_tiles[i]->*moves[1][i])();
+
+    // if it is a duplicate
+    if (temp_tiles[i]->is_duplicate())
+    {
+        //  delete the move
+        delete temp_tiles[i];
+        temp_tiles[i] = nullptr;
+    }
+    // else
+    // {
+    //     // add it to be expanded later
+    //     newMove->insertion_sort();
+    // }
+}
+
 /***
  * Expands the node and adds it to the opened list
  */
 void expand(Tile *node)
 {
+
     for (int i = 0; i < 4; i++)
     {
         // 0 up, 1 down, 2 left, 4 right
-        // of the move can be made
+        // if the move can be made
         if ((node->*moves[0][i])())
         {
             Tile *newMove = new Tile(*node);
             newMove->previous = node;
+            // make the move
             (newMove->*moves[1][i])();
 
-            // if it is a duplicate found in opened or closed
-            if (newMove->found_in(Tile::opened) ||
-                newMove->found_in(Tile::closed))
-            { // delete the move
+            // if it is a duplicate
+            if (newMove->is_duplicate(true))
+            {
+                //  delete the move
                 delete newMove;
                 newMove = nullptr;
             }
             else
-            { // add it to be expanded later
+            {
+                // add it to be expanded later
                 newMove->insertion_sort();
             }
         }
     }
+}
+
+void expand_with_threads(Tile *node)
+{
+
+    for (int i = 0; i < 4; i++)
+    {
+        movesThreads[i] = std::thread(createMove, node, i);
+    }
+    for (int i = 0; i < 4; i++)
+    {
+        if (movesThreads[i].joinable())
+            movesThreads[i].join();
+    }
+    for (int i = 0; i < 4; i++)
+    {
+        if (temp_tiles[i] != nullptr)
+            temp_tiles[i]->insertion_sort();
+        }
 }
 
 void display_list(Tile *node)
@@ -60,20 +114,39 @@ void display_list_reversed(Tile *node, int *pathlength)
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
-    int arr[N][N] = {{5, 6, 1, 3},
-                     {2, 0, 8, 4},
-                     {9, 10, 7, 15},
-                     {13, 14, 12, 11}};
+    TileType arr[N][N] = {
+        {1, 2, 7, 11},
+        {3, 6, 10, 4},
+        {5, 14, 8, 12},
+        {9, 13, 15, 0},
+    }
+
+    ;
+
+    // for multi threads
+    int use_threads_int;
+    if (argc > 1)
+    {
+        use_threads_int = atoi(argv[1]);
+    }
+    if (use_threads_int == 1)
+    {
+        use_threads = true;
+    }
+    if (use_threads_int != 1 || argc < 2)
+    {
+        use_threads = false;
+    }
+    //////////////
 
     bool solvable = false;
     Tile goal = set_goal();
 
     Tile::opened = new Tile(arr);
-
+    int itr = 0;
     Tile *current;
-
     while (Tile::opened != NULL)
     {
         current = Tile::opened;
@@ -85,8 +158,19 @@ int main()
             solvable = true;
             break;
         }
-        expand(current);
-
+        if (use_threads)
+        {
+            expand_with_threads(current);
+        }
+        else
+        {
+            expand(current);
+        }
+        itr++;
+        if (itr % 10000 == 0)
+        {
+            std::cout << itr << "\n";
+        }
         current->close();
     }
     if (!solvable)
