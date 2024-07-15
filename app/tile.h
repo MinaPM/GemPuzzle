@@ -314,8 +314,8 @@ public:
         bool found_in_closed = false, found_in_opened = false;
         if (use_threads)
         {
-           std::thread openThread = std::thread(Tile::found_in_opened, this, &found_in_opened);
-           std::thread closedThread = std::thread(Tile::found_in_closed, this, &found_in_closed);
+           std::thread openThread = std::thread(&Tile::found_in_opened, this, &found_in_opened);
+           std::thread closedThread = std::thread(&Tile::found_in_closed, this, &found_in_closed);
             openThread.join();
             closedThread.join();
         }

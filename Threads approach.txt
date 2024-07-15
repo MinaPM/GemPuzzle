@@ -1,0 +1,37 @@
+0 no threads (best... ?)
+
+results:
+        real	0m14.704s
+        user	0m14.695s
+        sys	    0m0.008s
+
+
+1. two threads in every node (worst)
+    two threads running at a time to check if the
+    node is duplicate on the Opened & Closed lists
+
+results:
+        real	0m53.028s
+        user	1m5.207s
+        sys	    0m6.640s
+
+
+2. four threads (or less) (good)
+    four threads running to check if every new
+    expantion is a duplicate. Opened & closed lists are checked in the same thread
+
+results:
+        real	0m40.093s
+        user	1m9.162s
+        sys	    0m5.526s
+
+
+3. four threads (or less) with two extra threads for Opened & Closed (bad)
+    same as 2 except Opened & Closed are checked with two seperate threads
+
+retsults:
+        real	0m47.986s
+        user	1m28.749s
+        sys	    0m24.921s
+
+

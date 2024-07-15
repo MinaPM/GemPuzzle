@@ -19,7 +19,7 @@ void createMove(Tile *node, int i)
     (temp_tiles[i]->*moves[1][i])();
 
     // if it is a duplicate
-    if (temp_tiles[i]->is_duplicate())
+    if (temp_tiles[i]->is_duplicate(use_threads))
     {
         //  delete the move
         delete temp_tiles[i];
@@ -50,7 +50,7 @@ void expand(Tile *node)
             (newMove->*moves[1][i])();
 
             // if it is a duplicate
-            if (newMove->is_duplicate(true))
+            if (newMove->is_duplicate(use_threads))
             {
                 //  delete the move
                 delete newMove;
@@ -81,7 +81,7 @@ void expand_with_threads(Tile *node)
     {
         if (temp_tiles[i] != nullptr)
             temp_tiles[i]->insertion_sort();
-        }
+    }
 }
 
 void display_list(Tile *node)
@@ -116,30 +116,65 @@ void display_list_reversed(Tile *node, int *pathlength)
 
 int main(int argc, char **argv)
 {
+
     TileType arr[N][N] = {
         {1, 2, 7, 11},
         {3, 6, 10, 4},
         {5, 14, 8, 12},
         {9, 13, 15, 0},
-    }
+    };
+    /*options
 
-    ;
+    0 no threads
 
+    1. two threads in every node
+        two threads running at a time to check if the
+        node is duplicate on the Opened & Closed lists
+
+    2. four threads (or less)
+        four threads running to check if every new
+        expantion is a duplicate. Opened & closed lists are checked in the same thread
+
+    3. four threads (or less) with two extra threads for Opened & Closed
+        same as 2 except Opened & Closed are checked with two seperate threads
+
+    */
     // for multi threads
     int use_threads_int;
     if (argc > 1)
     {
         use_threads_int = atoi(argv[1]);
     }
-    if (use_threads_int == 1)
-    {
-        use_threads = true;
-    }
-    if (use_threads_int != 1 || argc < 2)
-    {
-        use_threads = false;
+    else{
+        use_threads_int=0;
     }
     //////////////
+
+    void (*expandFunction)(Tile *);
+    switch (use_threads_int)
+    {
+    case 0:
+        use_threads = false;
+        expandFunction = expand;
+        break;
+    case 1:
+        use_threads = true;
+        expandFunction = expand;
+        break;
+    case 2:
+        use_threads = false;
+        expandFunction = expand_with_threads;
+        break;
+    case 3:
+        use_threads = true;
+        expandFunction = expand_with_threads;
+        break;
+
+    default:
+        use_threads = false;
+        expandFunction = expand;
+        break;
+    }
 
     bool solvable = false;
     Tile goal = set_goal();
@@ -147,30 +182,39 @@ int main(int argc, char **argv)
     Tile::opened = new Tile(arr);
     int itr = 0;
     Tile *current;
+
     while (Tile::opened != NULL)
     {
         current = Tile::opened;
         Tile::opened = Tile::opened->next;
         if (*current == goal)
-        {
-            int pathlength = 0;
-            display_list_reversed(current, &pathlength);
-            solvable = true;
+        {   
+            //uncomment later
+            // int pathlength = 0;
+            // display_list_reversed(current, &pathlength);
+            // solvable = true;
+            //comment later
+            std::cout<<"done!\n";
             break;
+
         }
-        if (use_threads)
-        {
-            expand_with_threads(current);
-        }
-        else
-        {
-            expand(current);
-        }
-        itr++;
-        if (itr % 10000 == 0)
-        {
-            std::cout << itr << "\n";
-        }
+
+        expandFunction(current);
+        // if (use_threads)
+        // {
+        //     expand_with_threads(current);
+        // }
+        // else
+        // {
+        //     expand(current);
+        // }
+
+
+        // itr++;
+        // if (itr % 10000 == 0)
+        // {
+        //     std::cout << itr << "\n";
+        // }
         current->close();
     }
     if (!solvable)
