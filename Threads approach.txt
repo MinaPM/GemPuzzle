@@ -5,6 +5,7 @@ results:
         user	0m14.695s
         sys	    0m0.008s
 
+-----------------------------
 
 1. two threads in every node (worst)
     two threads running at a time to check if the
@@ -15,6 +16,7 @@ results:
         user	1m5.207s
         sys	    0m6.640s
 
+-----------------------------
 
 2. four threads (or less) (good)
     four threads running to check if every new
@@ -25,6 +27,7 @@ results:
         user	1m9.162s
         sys	    0m5.526s
 
+-----------------------------
 
 3. four threads (or less) with two extra threads for Opened & Closed (bad)
     same as 2 except Opened & Closed are checked with two seperate threads

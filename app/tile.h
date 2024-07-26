@@ -249,82 +249,15 @@ public:
         }
         return false;
     }
-    
-    /**
-     * Checks if the tile is found in Opened list
-     *
-     * @param flag true if tile is found
-     */
-    void found_in_opened(bool *flag)
-    {
-        if (this == nullptr)
-        {
-            *flag = false;
-            return;
-        }
-        Tile *list = opened;
 
-        while (list != nullptr)
-        {
-            if (this == list)
-            {
-                *flag = true;
-                return;
-            }
-
-            list = list->next;
-        }
-        *flag = false;
-    }
-
-    /**
-     * Checks if the tile is found in Closed list
-     *
-     * @param flag true if tile is found
-     */
-    void found_in_closed(bool *flag)
-    {
-        if (this == nullptr)
-        {
-            *flag = false;
-            return;
-        }
-        Tile *list = closed;
-
-        while (list != nullptr)
-        {
-            if (this == list)
-            {
-                *flag = true;
-                return;
-            }
-
-            list = list->next;
-        }
-        *flag = false;
-    }
-    
     /**
      * Checks if the tile is duplicate
      *
-     * @param use_threads determines weather or not threads are to be used
      */
-    bool is_duplicate(bool use_threads = false)
+    bool is_duplicate()
     {
-        bool found_in_closed = false, found_in_opened = false;
-        if (use_threads)
-        {
-           std::thread openThread = std::thread(&Tile::found_in_opened, this, &found_in_opened);
-           std::thread closedThread = std::thread(&Tile::found_in_closed, this, &found_in_closed);
-            openThread.join();
-            closedThread.join();
-        }
-        else
-        {
-            this->found_in_closed(&found_in_closed);
-            this->found_in_opened(&found_in_opened);
-        }
-        return found_in_closed || found_in_opened;
+        return found_in(Tile::closed) ||
+               found_in(Tile::opened);
     }
 
     /**
