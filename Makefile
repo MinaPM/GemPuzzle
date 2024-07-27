@@ -2,58 +2,64 @@
 # for building on windows run (without quotes): "mingw32-make windows"
 
 
-main_cpp = ./app/main.cpp
-main_o = ./app/main.o
+main_cpp = .\app\main.cpp
+main_o = .\app\main.o
 app_name = gem_puzzle
-output_path_windows = /Build/Windows/
-output_path_linux = /Build/Linux/
+output_path_windows = ./Build/Windows/
+output_path_linux = ./Build/Linux/
 
 
 
 SFML_include_path = ".\src\include"
 SFML_library_path = ".\src\lib"
 SFML_libraries = -lsfml-system -lsfml-window -lsfml-graphics -lsfml-audio
-SFML_static_libraries = -lsfml-system-s -lsfml-window-s -lsfml-graphics-s -lsfml-audio-s -lopengl32 -lfreetype -lwinmm -lgdi32 -mwindows
+SFML_static_libraries = -lsfml-graphics-s -lsfml-audio-s -lsfml-window-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -mwindows
 
 
 linux: compile link_linux clean run_linux
 
-windows: compile link_windows clean run_windows
+windows: compile link_windows clean_windows run_windows
 
 
 compile:
-	g++ -c $(main_cpp) -o $(main_o) -I$(SFML_include_path)
+	g++ -c $(main_cpp) -o $(main_o) -I$(SFML_include_path) -DSFML_STATIC
+
 
 
 link_linux:
-	g++ $(main_o) -o .$(output_path_linux)$(app_name) -L$(SFML_library_path) $(SFML_libraries)
+	g++ $(main_o) -o $(output_path_linux)$(app_name) -L$(SFML_library_path) $(SFML_libraries)
 
 link_windows:
-	g++ $(main_o) -o .$(output_path_windows)$(app_name).exe -L$(SFML_library_path) $(SFML_libraries)
+	g++ $(main_o) -o $(output_path_windows)$(app_name).exe -L$(SFML_library_path) $(SFML_static_libraries)
+
 
 
 clean: 
 	rm -f $(main_o)
 
+clean_windows: 
+	del $(main_o)
+
+
 
 run_linux:
-	.$(output_path_linux)$(app_name)
+	$(output_path_linux)$(app_name)
 
 run_windows:
-	.$(output_path_windows)$(app_name).exe
+	$(output_path_windows)$(app_name).exe
 
 
 
 
+#sfml dynamicly linked libraries
 
+windows_dynamic_link:
 
-# compile_static_link
+	g++ -c $(main_cpp) -o $(main_o) -I$(SFML_include_path)
 
-compile_static_link:
-	g++ -c $(main_cpp) -o $(main_o) -I$(SFML_include_path) -DSFML_STATIC
+	g++ $(main_o) -o $(output_path_windows)"Dynamic Link/"$(app_name).exe -L$(SFML_library_path) $(SFML_libraries)
 
-	g++ $(main_o) -o .$(output_path_linux)$(app_name) -L$(SFML_library_path) $(SFML_static_libraries)
+	del $(main_o)
 
-	rm -f $(main_o)
+	$(output_path_windows)"Dynamic Link/"$(app_name).exe
 
-	.$(output_path_linux)$(app_name)

@@ -1,5 +1,5 @@
-#include "tile.h"
-#include "barrier.h"
+#include "Header/tile.h"
+#include "Header/barrier.h"
 
 Tile *nodes[4];
 bool keepRunning = true;

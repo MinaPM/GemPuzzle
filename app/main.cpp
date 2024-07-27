@@ -1,6 +1,6 @@
-#include "TileShape.h"
-#include "TileData.h"
-#include "TileControls.h"
+#include "Header/TileShape.h"
+#include "Header/TileData.h"
+#include "Header/TileControls.h"
 #include <chrono>
 #include <thread>
 #include <random>
