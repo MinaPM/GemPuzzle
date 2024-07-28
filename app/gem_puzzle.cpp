@@ -6,12 +6,50 @@ bool keepRunning = true;
 bool useNestedThreads = false;
 Barrier beforeBarrier(4 + 1), afterBarrier(4 + 1);
 
+std::mutex local_mute;
+
+void filterList2(int id, bool *found, bool *keepRunninglvl2, Tile *list, Barrier *before, Barrier *after)
+{
+    Tile *listItr;
+    while (keepRunning)
+    {
+        before->wait();
+        // *found = nodes[id]->found_in(list);
+
+        *found = false;
+        if (nodes[id] == nullptr)
+        {
+            *found = false;
+        }
+        else
+        {
+            listItr = list;
+            while (*keepRunninglvl2 && listItr != nullptr)
+            {
+                if (nodes[id] == listItr)
+                {
+                    *found = true;
+                }
+
+                listItr = listItr->next;
+            }
+        }
+
+        local_mute.lock();
+        *keepRunninglvl2 = false;
+        local_mute.unlock();
+
+        after->wait();
+    }
+}
 void filterList(int id, bool *found, Tile *list, Barrier *before, Barrier *after)
 {
+
     while (keepRunning)
     {
         before->wait();
         *found = nodes[id]->found_in(list);
+
         after->wait();
     }
 }
@@ -20,11 +58,11 @@ void filter(int id)
 {
     Barrier *beforeBarrier2 = new Barrier(2 + 1), *afterBarrier2 = new Barrier(2 + 1);
     std::thread threads[2];
-    bool *foundInClosed = new bool, *foundInOpened = new bool;
+    bool *foundInClosed = new bool, *foundInOpened = new bool, *local_keep_running = new bool;
     if (useNestedThreads)
     {
-        threads[0] = std::thread(filterList, id, foundInOpened, Tile::opened, beforeBarrier2, afterBarrier2);
-        threads[1] = std::thread(filterList, id, foundInClosed, Tile::closed, beforeBarrier2, afterBarrier2);
+        threads[0] = std::thread(filterList2, id, foundInOpened, local_keep_running, Tile::opened, beforeBarrier2, afterBarrier2);
+        threads[1] = std::thread(filterList2, id, foundInClosed, local_keep_running, Tile::closed, beforeBarrier2, afterBarrier2);
     }
 
     while (keepRunning)
@@ -35,6 +73,7 @@ void filter(int id)
         {
             *foundInClosed = false;
             *foundInOpened = false;
+            *local_keep_running = true;
             beforeBarrier2->wait();
             afterBarrier2->wait();
             if (*foundInClosed || *foundInOpened)
@@ -70,6 +109,7 @@ void filter(int id)
     delete afterBarrier2;
     delete foundInClosed;
     delete foundInOpened;
+    delete local_keep_running;
 }
 
 void expand2(Tile *node)
