@@ -3,22 +3,73 @@
 
 Tile *nodes[4];
 bool keepRunning = true;
+bool useNestedThreads = false;
 Barrier beforeBarrier(4 + 1), afterBarrier(4 + 1);
+
+void filterList(int id, bool *found, Tile *list, Barrier *before, Barrier *after)
+{
+    while (keepRunning)
+    {
+        before->wait();
+        *found = nodes[id]->found_in(list);
+        after->wait();
+    }
+}
 
 void filter(int id)
 {
+    Barrier *beforeBarrier2 = new Barrier(2 + 1), *afterBarrier2 = new Barrier(2 + 1);
+    std::thread threads[2];
+    bool *foundInClosed = new bool, *foundInOpened = new bool;
+    if (useNestedThreads)
+    {
+        threads[0] = std::thread(filterList, id, foundInOpened, Tile::opened, beforeBarrier2, afterBarrier2);
+        threads[1] = std::thread(filterList, id, foundInClosed, Tile::closed, beforeBarrier2, afterBarrier2);
+    }
+
     while (keepRunning)
     {
         beforeBarrier.wait();
 
-        if (nodes[id]->is_duplicate())
+        if (useNestedThreads)
         {
-            delete nodes[id];
-            nodes[id] = nullptr;
+            *foundInClosed = false;
+            *foundInOpened = false;
+            beforeBarrier2->wait();
+            afterBarrier2->wait();
+            if (*foundInClosed || *foundInOpened)
+            {
+                delete nodes[id];
+                nodes[id] = nullptr;
+            }
+        }
+
+        else
+        {
+            if (nodes[id]->is_duplicate())
+            {
+                delete nodes[id];
+                nodes[id] = nullptr;
+            }
         }
 
         afterBarrier.wait();
     }
+
+    if (useNestedThreads)
+    {
+
+        beforeBarrier2->wait();
+        afterBarrier2->wait();
+
+        threads[0].join();
+        threads[1].join();
+    }
+
+    delete beforeBarrier2;
+    delete afterBarrier2;
+    delete foundInClosed;
+    delete foundInOpened;
 }
 
 void expand2(Tile *node)
@@ -143,6 +194,8 @@ int main(int argc, char **argv)
     if (argc > 1 && argv[1][0] == 'm')
     {
         useThreads = true;
+        if (argv[1][0] == 'n')
+            useNestedThreads = true;
     }
 
     std::thread threads[4];
