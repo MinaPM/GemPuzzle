@@ -3,10 +3,39 @@
 
 Tile *nodes[4];
 bool keepRunning = true;
-bool useNestedThreads = false;
+bool useNestedThreads = false, useMutex = false;
 Barrier beforeBarrier(4 + 1), afterBarrier(4 + 1);
 
 std::mutex local_mute;
+
+void filterList3(int id, bool *found, Tile *list, Barrier *before, Barrier *after)
+{
+    Tile *listItr;
+    while (keepRunning)
+    {
+        before->wait();
+
+        *found = false;
+        if (nodes[id] == nullptr)
+        {
+            *found = false;
+        }
+        else
+        {
+            listItr = list;
+            while (listItr != nullptr)
+            {
+                if (nodes[id] == listItr)
+                {
+                    *found = true;
+                }
+
+                listItr = listItr->next;
+            }
+        }
+        after->wait();
+    }
+}
 
 void filterList2(int id, bool *found, bool *keepRunninglvl2, Tile *list, Barrier *before, Barrier *after)
 {
@@ -61,8 +90,17 @@ void filter(int id)
     bool *foundInClosed = new bool, *foundInOpened = new bool, *local_keep_running = new bool;
     if (useNestedThreads)
     {
-        threads[0] = std::thread(filterList2, id, foundInOpened, local_keep_running, Tile::opened, beforeBarrier2, afterBarrier2);
-        threads[1] = std::thread(filterList2, id, foundInClosed, local_keep_running, Tile::closed, beforeBarrier2, afterBarrier2);
+        if (useMutex)
+        {
+
+            threads[0] = std::thread(filterList2, id, foundInOpened, local_keep_running, Tile::opened, beforeBarrier2, afterBarrier2);
+            threads[1] = std::thread(filterList2, id, foundInClosed, local_keep_running, Tile::closed, beforeBarrier2, afterBarrier2);
+        }
+        else
+        {
+            threads[0] = std::thread(filterList3, id, foundInOpened, Tile::opened, beforeBarrier2, afterBarrier2);
+            threads[1] = std::thread(filterList3, id, foundInClosed, Tile::closed, beforeBarrier2, afterBarrier2);
+        }
     }
 
     while (keepRunning)
@@ -236,6 +274,9 @@ int main(int argc, char **argv)
         useThreads = true;
         if (argv[1][0] == 'n')
             useNestedThreads = true;
+
+        if (argv[1][0] == 'm')
+            useMutex = true;
     }
 
     std::thread threads[4];
