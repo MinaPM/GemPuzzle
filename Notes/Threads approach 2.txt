@@ -1,0 +1,16 @@
+Option #1 (1 thread):
+    One thread does all the work.
+
+Option #2 (2 threads):
+    Two threads manage the filtering by checking 
+    if the node exists in the opened list and 
+    the closed list concurrently.
+
+Option #3 (4 threads):
+    Four threads manage the expansion of the 
+    node and filter sequentially.
+
+Option #4 (8 threads):
+    Eight threads manage the expansion in 
+    every direction and filtering is done 
+    concurrenly.

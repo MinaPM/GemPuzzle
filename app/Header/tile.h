@@ -6,6 +6,18 @@
 #define N 4
 #define NxN (N * N)
 // higher N values (>15) require a larger data type
+
+enum Direction
+{
+    UP = 0,
+    DOWN = 1,
+    LEFT = 2,
+    RIGHT = 3,
+    NONE
+};
+
+const Direction Directions[] = {UP, DOWN, LEFT, RIGHT};
+
 typedef unsigned char TileType;
 
 class Tile
@@ -241,6 +253,30 @@ public:
             return false;
 
         while (list != nullptr)
+        {
+            if (this == list)
+                return true;
+
+            list = list->next;
+        }
+        return false;
+    }
+
+    /**
+     * Same as found_in but syncs between other calls.
+     * stops if found in another list
+     *
+     * @param list the list to be checked (opened or closed)
+     * @param keepChecking pointer to boolean that stores the keepChecking status
+     * @param mute pointer to the mutex used to update the keepChecking status
+     * @return true if the tile is found in the list
+     */
+    bool mutual_found_in(Tile *list, bool *foundSomewhere)
+    {
+        if (this == nullptr)
+            return false;
+
+        while (!(*foundSomewhere) && list != nullptr)
         {
             if (this == list)
                 return true;
