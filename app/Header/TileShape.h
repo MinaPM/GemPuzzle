@@ -1,6 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
-#include "tile.h"
+#include "TileNew.h"
 
 class TileShape : public sf::Drawable, public sf::Transformable
 {
@@ -14,7 +14,7 @@ public:
     TileShape()
     {
         tile_size = 100;
-        // init shapes
+        // init shapecenter_texts
         square.setSize(sf::Vector2f(tile_size, tile_size));
         square.setFillColor(sf::Color::White);
         square.setOutlineColor(sf::Color::Red);
@@ -31,9 +31,8 @@ public:
         tile_fgh.setFillColor(sf::Color::Black);
     }
 
-    TileShape(const sf::Font &font)
+    TileShape(const sf::Font &font) : TileShape()
     {
-        TileShape();
         set_font(font);
     }
 
@@ -97,9 +96,8 @@ public:
         // pitch = 0;
     }
 
-    TileGrid(const bool &soundCheck)
+    TileGrid(const bool &soundCheck):TileGrid()
     {
-        TileGrid();
         this->soundCheck = &soundCheck;
     }
 

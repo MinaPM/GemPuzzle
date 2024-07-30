@@ -1,4 +1,4 @@
-#include "Header/Puzzle.h"
+#include "../Header/Puzzle.h"
 
 int main(int argc, char **argv)
 {
@@ -8,8 +8,14 @@ int main(int argc, char **argv)
         {5, 14, 8, 12},
         {9, 13, 15, 0},
     };
+      TileType arr2[N][N] = {
+        {15, 13, 4, 14},
+        {12, 3, 5, 0},
+        {1, 7, 11, 8},
+        {9, 2, 10, 6},
+    };
 
-    Puzzle puzzle(arr);
+    Puzzle puzzle(arr2);
     
     if (argc > 1)
     {

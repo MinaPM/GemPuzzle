@@ -1,12 +1,16 @@
 # for building on linux run (without quotes): "make linux"
 # for building on windows run (without quotes): "mingw32-make windows"
 
-
-main_cpp = .\app\main.cpp
-main_o = .\app\main.o
 app_name = gem_puzzle
-output_path_windows = ./Build/Windows/
+
+
+main_cpp_linux = ./app/main.cpp
+main_o_linux = ./app/main.o
 output_path_linux = ./Build/Linux/
+
+main_cpp_windows = .\app\main.cpp
+main_o_windows = .\app\main.o
+output_path_windows = ./Build/Windows/
 
 
 
@@ -16,34 +20,24 @@ SFML_libraries = -lsfml-system -lsfml-window -lsfml-graphics -lsfml-audio
 SFML_static_libraries = -lsfml-graphics-s -lsfml-audio-s -lsfml-window-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -mwindows
 
 
-linux: compile link_linux clean run_linux
+linux:
+	g++ -c $(main_cpp_linux) -o $(main_o_linux) -I$(SFML_include_path) -DSFML_STATIC
+	g++ $(main_cpp_linux) -o $(output_path_linux)$(app_name) -L$(SFML_library_path) $(SFML_libraries)
+	rm -f $(main_o_linux)
+	$(output_path_linux)$(app_name)
 
-windows: compile link_windows clean_windows run_windows
+
+windows: compile_windows link_windows clean_windows run_windows
 
 
-compile:
+compile_windows:
 	g++ -c $(main_cpp) -o $(main_o) -I$(SFML_include_path) -DSFML_STATIC
-
-
-
-link_linux:
-	g++ $(main_o) -o $(output_path_linux)$(app_name) -L$(SFML_library_path) $(SFML_libraries)
 
 link_windows:
 	g++ $(main_o) -o $(output_path_windows)$(app_name).exe -L$(SFML_library_path) $(SFML_static_libraries)
 
-
-
-clean: 
-	rm -f $(main_o)
-
 clean_windows: 
 	del $(main_o)
-
-
-
-run_linux:
-	$(output_path_linux)$(app_name)
 
 run_windows:
 	$(output_path_windows)$(app_name).exe

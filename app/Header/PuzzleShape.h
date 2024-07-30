@@ -1,7 +1,10 @@
-#include "TileNew.h"
+// #include "TileNew.h"
 #include "barrier.h"
-#include <thread>
 #include <random>
+
+#include "TileControls.h"
+#include "TileData.h"
+#include "TileShape.h"
 
 class Puzzle
 {
@@ -26,8 +29,19 @@ private:
         foundInClosed,
         foundInOpened;
 
+    // for ui
+    TileControls &tileControls;
+    TileData &tileData;
+    TileGrid &tileGrid;
+
 public:
-    Puzzle() : goal(set_goal()), before(3), after(3)
+    Puzzle(TileControls &tileControls, TileData &tileData, TileGrid &tileGrid)
+        : tileControls(tileControls),
+          tileData(tileData),
+          tileGrid(tileGrid),
+          goal(set_goal()),
+          before(3),
+          after(3)
     {
         closed_count = 0;
         opened_count = 0;
@@ -46,12 +60,8 @@ public:
             expandedNodes[direction] != nullptr;
 
         opened = new Tile(goal);
-    }
-
-    Puzzle(TileType tiles[N][N]) : Puzzle()
-    {
-        delete opened;
-        opened = new Tile(tiles);
+        iterator=opened;
+        update_UI();
     }
 
     bool solve(bool multithread = false)
@@ -59,10 +69,17 @@ public:
         if (multithread)
             initialize_threads_resources();
 
+        tileData.resetClock();
         while (opened != nullptr)
         {
             iterator = opened;
             opened = opened->next;
+
+            update_UI();
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                100 * (tileControls.solving_speed_slider.max -
+                       tileControls.solving_speed_slider.current)));
 
             if (*iterator == goal)
             {
@@ -84,14 +101,16 @@ public:
             insert_to_close(iterator);
         }
         clean_up(multithread);
+        tileControls.shuffle.enable();
         return false;
     }
 
-    void shuffle_puzzle(int intensity = 30)
+    bool shuffle()
     {
         if (opened == nullptr)
-            return;
+            return false;
 
+        int intensity = tileControls.shuffle_slider.current;
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distrib(0, 3);
@@ -103,24 +122,35 @@ public:
                 intensity++;
                 continue;
             }
+            update_UI();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
+        tileControls.shuffle_slider.enable();
+        tileControls.start.enable();
+        return true;
     }
 
-    void print_solution()
+    void display_solution()
     {
-        std::cout << "\nTotal steps tried = " << opened_count + closed_count << "\n";
-        std::cout << "Solution steps = " << solutionSteps << "\n\n";
-
         Tile *iterator = solutionPath;
         while (iterator != nullptr)
         {
-            iterator->print_tiles();
-            std::cout << "\n";
+            update_UI();
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                100 * (tileControls.solving_speed_slider.max -
+                       tileControls.solving_speed_slider.current)));
+
             iterator = iterator->next;
         }
     }
 
 private:
+    void update_UI()
+    {
+        tileGrid.update_values(*iterator);
+        tileData.updateData(opened_count, closed_count, iterator->f, iterator->g, iterator->h);
+    }
+
     void get_solution()
     {
         Tile *tile = iterator;
