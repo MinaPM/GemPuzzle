@@ -3,37 +3,12 @@
 #include <thread>
 #include <random>
 
-enum Direction
-{
-    UP = 0,
-    DOWN = 1,
-    LEFT = 2,
-    RIGHT = 3,
-    NONE
-};
-const Direction Directions[] = {UP, DOWN, LEFT, RIGHT};
-
-bool (Tile::*movable[4])() = {&Tile::up_movable,
-                              &Tile::down_movable,
-                              &Tile::left_movable,
-                              &Tile::right_movable};
-
-bool (Tile::*move[4])() = {&Tile::move_up,
-                           &Tile::move_down,
-                           &Tile::move_left,
-                           &Tile::move_right};
-
-typedef unsigned char TileType;
-
 class Puzzle
 {
 private:
     int numberOfTiles;
     int gridSize;
-    /// needs fixing
-    TileType goal_rows[NxN];
-    TileType goal_columns[NxN];
-    ///
+
     Tile goal;
     Tile *opened, *closed;
     Tile *iterator,
@@ -52,10 +27,8 @@ private:
         foundInOpened;
 
 public:
-    Puzzle() : before(3), after(3)
+    Puzzle() : goal(set_goal()), before(3), after(3)
     {
-        goal = set_goal();
-
         closed_count = 0;
         opened_count = 0;
         solutionSteps = 0;
@@ -118,11 +91,9 @@ public:
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distrib(0, 3);
 
-        int mv;
         while (intensity--)
         {
-            mv = distrib(gen);
-            if (!(opened->*move[mv])())
+            if (!opened->move(Directions[distrib(gen)]))
             {
                 intensity++;
                 continue;
@@ -132,8 +103,8 @@ public:
 
     void print_solution()
     {
-        std::cout << "\n Total stpes tried = " << opened_count + closed_count << "\n";
-        std::cout << "\n Solution steps = " << solutionSteps << "\n\n";
+        std::cout << "\nTotal steps tried = " << opened_count + closed_count << "\n";
+        std::cout << "Solution steps = " << solutionSteps << "\n\n";
 
         Tile *iterator = solutionPath;
         while (iterator != nullptr)
@@ -162,11 +133,11 @@ private:
     {
         for (auto &direction : Directions)
         {
-            if ((iterator->*movable[direction])())
+            if (iterator->movable(direction))
             {
                 expandedNodes[direction] = new Tile(*iterator);
                 expandedNodes[direction]->previous = iterator;
-                (expandedNodes[direction]->*move[direction])();
+                expandedNodes[direction]->move(direction);
             }
             else
             {
@@ -250,6 +221,21 @@ private:
         return false;
     }
 
+    bool found_in(Tile *node, Tile *list)
+    {
+        if (node == nullptr)
+            return false;
+
+        while (list != nullptr)
+        {
+            if (node == list)
+                return true;
+
+            list = list->next;
+        }
+        return false;
+    }
+
     bool mutual_found_in(Tile *list)
     {
         if (currentNode == nullptr)
@@ -300,8 +286,7 @@ private:
             delete temp;
         }
 
-        // first two nodes are in the solution
-        for (int i = 0; i < 2 && closed->next != nullptr; i++)
+        for (int i = 0; i < 2 && closed != nullptr; i++)
             closed = closed->next;
 
         while (closed != nullptr)
@@ -329,16 +314,13 @@ private:
     Tile set_goal()
     {
         TileType tempgoal[N][N], i, col, row;
-        Tile::goal_rows[0] = N - 1;
-        Tile::goal_columns[0] = N - 1;
         for (i = 1; i < NxN; i++)
         {
             row = (i - 1) / N;
             col = (i - 1) % N;
-            Tile::goal_rows[i] = row;
-            Tile::goal_columns[i] = col;
             tempgoal[row][col] = i;
         }
+
         tempgoal[N - 1][N - 1] = 0;
         Tile tgoal(tempgoal);
         return tgoal;
