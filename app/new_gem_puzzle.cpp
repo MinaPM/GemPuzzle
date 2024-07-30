@@ -1,4 +1,6 @@
 #include "Header/Puzzle.h"
+#include <fstream>
+#include <string>
 
 int main(int argc, char **argv)
 {
@@ -10,6 +12,9 @@ int main(int argc, char **argv)
     };
 
     Puzzle puzzle(arr);
+    Puzzle puzzle2;
+    
+    
 
     if (argc > 1)
     {
@@ -30,5 +35,8 @@ int main(int argc, char **argv)
         puzzle.solve();
     }
 
+    std::cout << "clean called\n";
+    puzzle.clean();
     puzzle.print_solution();
+
 }

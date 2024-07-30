@@ -1,6 +1,7 @@
 #include "TileNew.h"
 #include "barrier.h"
 #include <thread>
+#include <random>
 
 enum Direction
 {
@@ -12,15 +13,15 @@ enum Direction
 };
 const Direction Directions[] = {UP, DOWN, LEFT, RIGHT};
 
-bool (Tile::*moves[2][4])() = {{&Tile::up_movable,
-                                &Tile::down_movable,
-                                &Tile::left_movable,
-                                &Tile::right_movable},
+bool (Tile::*movable[4])() = {&Tile::up_movable,
+                              &Tile::down_movable,
+                              &Tile::left_movable,
+                              &Tile::right_movable};
 
-                               {&Tile::move_up,
-                                &Tile::move_down,
-                                &Tile::move_left,
-                                &Tile::move_right}};
+bool (Tile::*move[4])() = {&Tile::move_up,
+                           &Tile::move_down,
+                           &Tile::move_left,
+                           &Tile::move_right};
 
 typedef unsigned char TileType;
 
@@ -51,7 +52,7 @@ private:
         foundInOpened;
 
 public:
-    Puzzle() : before(2), after(2)
+    Puzzle() : before(3), after(3)
     {
         goal = set_goal();
 
@@ -87,10 +88,10 @@ public:
 
             if (*iterator == goal)
             {
-                if (multithread)
-                    free_threads_resources();
+                get_solution();
 
-                get_solution(iterator);
+                clean_up(multithread);
+
                 return true;
             }
 
@@ -104,14 +105,35 @@ public:
 
             insert_to_close(iterator);
         }
-        if (multithread)
-            free_threads_resources();
+        clean_up(multithread);
         return false;
+    }
+
+    void shuffle_puzzle(int intensity = 30)
+    {
+        if (opened == nullptr)
+            return;
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> distrib(0, 3);
+
+        int mv;
+        while (intensity--)
+        {
+            mv = distrib(gen);
+            if (!(opened->*move[mv])())
+            {
+                intensity++;
+                continue;
+            }
+        }
     }
 
     void print_solution()
     {
-        std::cout << "\nSolution steps = " << solutionSteps << "\n\n";
+        std::cout << "\n Total stpes tried = " << opened_count + closed_count << "\n";
+        std::cout << "\n Solution steps = " << solutionSteps << "\n\n";
 
         Tile *iterator = solutionPath;
         while (iterator != nullptr)
@@ -123,8 +145,9 @@ public:
     }
 
 private:
-    void get_solution(Tile *tile)
+    void get_solution()
     {
+        Tile *tile = iterator;
         while (tile != nullptr)
         {
             tile->next = solutionPath;
@@ -139,12 +162,11 @@ private:
     {
         for (auto &direction : Directions)
         {
-            if ((iterator->*moves[0][direction])())
+            if ((iterator->*movable[direction])())
             {
                 expandedNodes[direction] = new Tile(*iterator);
                 expandedNodes[direction]->previous = iterator;
-                // make the move
-                (expandedNodes[direction]->*moves[1][direction])();
+                (expandedNodes[direction]->*move[direction])();
             }
             else
             {
@@ -233,9 +255,9 @@ private:
         if (currentNode == nullptr)
             return false;
 
-        bool &foundSomewhere = (list == opened) ? foundInClosed : foundInOpened;
+        bool *foundSomewhere = (list == opened) ? &foundInClosed : &foundInOpened;
 
-        while (!foundSomewhere && list != nullptr)
+        while (list != nullptr && !(*foundSomewhere))
         {
             if (currentNode == list)
                 return true;
@@ -249,15 +271,14 @@ private:
     {
         keepRunning = true;
 
-        for (int i = 0; i < 2; i++)
-        {
-            threads[i] = std::thread(&Puzzle::worker, this, ((i % 2 == 0) ? opened : closed));
-        }
+        threads[0] = std::thread(&Puzzle::worker, this, opened);
+        threads[1] = std::thread(&Puzzle::worker, this, closed);
     }
 
     void free_threads_resources()
     {
         keepRunning = false;
+        currentNode = nullptr;
 
         before.wait();
         after.wait();
@@ -265,15 +286,41 @@ private:
             threads[i].join();
     }
 
+    void clean_up(bool multithread)
+    {
+        if (multithread)
+            free_threads_resources();
+
+        Tile *temp;
+
+        while (opened != nullptr)
+        {
+            temp = opened;
+            opened = opened->next;
+            delete temp;
+        }
+
+        // first two nodes are in the solution
+        for (int i = 0; i < 2 && closed->next != nullptr; i++)
+            closed = closed->next;
+
+        while (closed != nullptr)
+        {
+            temp = closed;
+            closed = closed->next;
+            delete temp;
+        }
+    }
+
     void worker(Tile *list)
     {
-        bool &found = ((list == opened) ? foundInOpened : foundInClosed);
+        bool *found = ((list == opened) ? &foundInOpened : &foundInClosed);
 
         while (keepRunning)
         {
             before.wait();
 
-            found = mutual_found_in(list);
+            *found = mutual_found_in(list);
 
             after.wait();
         }
