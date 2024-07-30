@@ -45,13 +45,13 @@ private:
 
     // for multithreading
     std::thread threads[2];
-    Barrier *before, *after;
+    Barrier before, after;
     bool keepRunning,
         foundInClosed,
         foundInOpened;
 
 public:
-    Puzzle()
+    Puzzle() : before(2), after(2)
     {
         goal = set_goal();
 
@@ -75,8 +75,11 @@ public:
 
     Puzzle(TileType tiles[N][N]) : Puzzle() { opened = new Tile(tiles); }
 
-    bool solve()
+    bool solve(bool multithread = false)
     {
+        if (multithread)
+            initialize_threads_resources();
+
         while (opened != nullptr)
         {
             iterator = opened;
@@ -84,13 +87,16 @@ public:
 
             if (*iterator == goal)
             {
+                if (multithread)
+                    free_threads_resources();
+
                 get_solution(iterator);
                 return true;
             }
 
             expand();
 
-            filter();
+            (multithread) ? filter_with_threads() : filter();
 
             for (auto &direction : Directions)
                 if (expandedNodes[direction] != nullptr)
@@ -98,10 +104,10 @@ public:
 
             insert_to_close(iterator);
         }
+        if (multithread)
+            free_threads_resources();
         return false;
     }
-
-    // bool multithread_solve() {}
 
     void print_solution()
     {
@@ -160,6 +166,22 @@ private:
         }
     }
 
+    void filter_with_threads()
+    {
+        for (auto &direction : Directions)
+        {
+            currentNode = expandedNodes[direction];
+            before.wait();
+            after.wait();
+            if (foundInOpened || foundInClosed)
+            {
+                delete expandedNodes[direction];
+                expandedNodes[direction] = nullptr;
+                currentNode = nullptr;
+            }
+        }
+    }
+
     void insert_to_open(Tile *tile)
     {
         Tile *cursor = opened, *prev = opened;
@@ -206,14 +228,16 @@ private:
         return false;
     }
 
-    bool mutual_found_in(Tile *tile, Tile *list, bool *foundSomewhere)
+    bool mutual_found_in(Tile *list)
     {
-        if (tile == nullptr)
+        if (currentNode == nullptr)
             return false;
+
+        bool &foundSomewhere = (list == opened) ? foundInClosed : foundInOpened;
 
         while (!foundSomewhere && list != nullptr)
         {
-            if (tile == list)
+            if (currentNode == list)
                 return true;
 
             list = list->next;
@@ -221,49 +245,37 @@ private:
         return false;
     }
 
-    void initialize_threads_resources(Tile *expandedNode)
+    void initialize_threads_resources()
     {
-        before = new Barrier(3);
-        after = new Barrier(3);
-        *expandedNode = nullptr;
-
         keepRunning = true;
-        foundInOpened = false;
-        foundInClosed = false;
 
         for (int i = 0; i < 2; i++)
         {
-            threads[i] = std::thread(
-                &Puzzle::worker, this,
-                ((i % 2 == 0) ? &foundInOpened : &foundInClosed),
-                ((i % 2 == 0) ? &foundInClosed : &foundInOpened),
-                ((i % 2 == 0) ? opened : closed));
+            threads[i] = std::thread(&Puzzle::worker, this, ((i % 2 == 0) ? opened : closed));
         }
     }
 
-    void free_threads_resources(Tile *expandedNode)
+    void free_threads_resources()
     {
         keepRunning = false;
-        expandedNode = nullptr;
 
-        before->wait();
-        after->wait();
+        before.wait();
+        after.wait();
         for (int i = 0; i < 2; i++)
             threads[i].join();
-
-        delete before;
-        delete after;
     }
 
-    void worker(bool *found, bool *foundSomewhere, Tile *list)
+    void worker(Tile *list)
     {
+        bool &found = ((list == opened) ? foundInOpened : foundInClosed);
+
         while (keepRunning)
         {
-            before->wait();
+            before.wait();
 
-            *found = mutual_found_in(iterator, list, foundSomewhere);
+            found = mutual_found_in(list);
 
-            after->wait();
+            after.wait();
         }
     }
 
