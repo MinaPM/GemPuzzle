@@ -31,13 +31,13 @@ windows: compile_windows link_windows clean_windows run_windows
 
 
 compile_windows:
-	g++ -c $(main_cpp) -o $(main_o) -I$(SFML_include_path) -DSFML_STATIC
+	g++ -c $(main_cpp_windows) -o $(main_o_windows) -I$(SFML_include_path) -DSFML_STATIC
 
 link_windows:
-	g++ $(main_o) -o $(output_path_windows)$(app_name).exe -L$(SFML_library_path) $(SFML_static_libraries)
+	g++ $(main_o_windows) -o $(output_path_windows)$(app_name).exe -L$(SFML_library_path) $(SFML_static_libraries)
 
 clean_windows: 
-	del $(main_o)
+	del $(main_o_windows)
 
 run_windows:
 	$(output_path_windows)$(app_name).exe

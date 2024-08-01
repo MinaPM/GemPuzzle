@@ -1,17 +1,48 @@
 #include "Header/PuzzleShape.h"
-#include <chrono>
 
-bool load_resourses(sf::Font &font, sf::SoundBuffer &buffer)
+Puzzle *puzzlePtr = nullptr;
+TileControls *tileControlsPtr = nullptr;
+
+//									sound is causing an error on Windows
+bool load_resourses(sf::Font &font /*, sf::SoundBuffer &buffer*/)
 {
 	// loading sound
-	if (!buffer.loadFromFile("Assets/Audio/beep.wav"))
-		return false;
+	// if (!buffer.loadFromFile("Assets/Audio/beep.wav"))
+	// 	return false;
 
 	// loading font
 	if (!font.loadFromFile("Assets/Fonts/roboto.ttf"))
 		return false;
 
 	return true;
+}
+
+void solve()
+{
+	tileControlsPtr->disabelAllButtons();
+
+	puzzlePtr->solve();
+
+	// tileControlsPtr->enabelAllButtons();
+	if (puzzlePtr->isSolved())
+		tileControlsPtr->buttons[ShowSolutionButton].enable();
+}
+void shuffle()
+{
+	tileControlsPtr->sliders[ShuffleSlider].disable();
+	tileControlsPtr->disabelAllButtons();
+
+	puzzlePtr->shuffle();
+
+	tileControlsPtr->sliders[ShuffleSlider].enable();
+	tileControlsPtr->enabelAllButtons();
+	tileControlsPtr->buttons[ShowSolutionButton].disable();
+}
+void display_solution()
+{
+	tileControlsPtr->disabelAllButtons();
+	puzzlePtr->display_solution();
+	tileControlsPtr->buttons[ShowSolutionButton].enable();
 }
 
 int main()
@@ -23,21 +54,31 @@ int main()
 	sf::RenderWindow window(sf::VideoMode(1000, 720), "Gem Puzzle", sf::Style::Close, settings);
 	window.setFramerateLimit(30);
 
-	sf::SoundBuffer buffer;
+	// sf::SoundBuffer buffer;
 	sf::Font roboto_font;
-	if (!load_resourses(roboto_font, buffer))
+	if (!load_resourses(roboto_font /*, buffer*/))
 		return -1;
 
 	TileGrid tileShape;
 	TileControls tileControls(roboto_font);
 	TileData tileData(roboto_font);
 
+	Puzzle puzzle(tileControls, tileData, tileShape);
+
+	tileControlsPtr = &tileControls;
+	puzzlePtr = &puzzle;
+
 	tileShape.setFont(roboto_font);
 	tileShape.center_tiles(window.getSize());
+	tileData.setPosition(20, 500);
 	// tileShape.setSoundBuffer(buffer);
 
-	tileData.setPosition(20, 500);
-	Puzzle puzzle(tileControls, tileData, tileShape);
+	tileControls.buttons[SolveButton].setOnClick(solve);
+	tileControls.buttons[ShowSolutionButton].setOnClick(display_solution);
+	tileControls.buttons[ShuffleButton].setOnClick(shuffle);
+
+	tileControls.buttons[SolveButton].disable();
+	tileControls.buttons[ShowSolutionButton].disable();
 
 	while (true)
 	{
@@ -52,20 +93,6 @@ int main()
 			if (event.type == sf::Event::MouseButtonPressed)
 			{
 				tileControls.mouseClicked(sf::Mouse::getPosition(window));
-				if (tileControls.start.within(sf::Mouse::getPosition(window)))
-				{
-					tileControls.shuffle.disable();
-
-					tileControls.start.run([&puzzle]()
-										   { puzzle.solve(); });
-				}
-				if (tileControls.shuffle.within(sf::Mouse::getPosition(window)))
-				{
-					tileControls.start.disable();
-					tileControls.shuffle_slider.disable();
-					tileControls.shuffle.run([&puzzle]()
-											 { puzzle.shuffle(); });
-				}
 			}
 			if (event.type == sf::Event::MouseButtonReleased)
 			{
