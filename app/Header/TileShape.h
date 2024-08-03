@@ -82,31 +82,25 @@ public:
 class TileGrid : public sf::Drawable,
                  public sf::Transformable
 {
-    // sound disabled, it needs to be revisited
-public:
+private:
     TileShape tileShapes[N][N];
-    // sf::Sound beep;
-    // float base_pitch, pitch;
+    sf::Sound beep;
     int max_dist;
-    const bool *soundCheck;
+    const bool *enableSound;
 
     TileGrid()
     {
         max_dist = 2 * (N - 1);
-        // pitch = 0;
+        enableSound = nullptr;
     }
 
-    TileGrid(const bool &soundCheck):TileGrid()
+public:
+    TileGrid(const sf::Font &font, const sf::SoundBuffer &buffer, const bool &enableSound) : TileGrid()
     {
-        this->soundCheck = &soundCheck;
-    }
-
-    TileGrid(const sf::Font &font, const bool &soundCheck) : TileGrid(soundCheck)
-    {
+        this->enableSound = &enableSound;
+        beep.setBuffer(buffer);
         setFont(font);
     }
-
-    // void setSoundBuffer(const sf::SoundBuffer &buffer) { beep.setBuffer(buffer); }
 
     void setFont(const sf::Font &font)
     {
@@ -126,34 +120,24 @@ public:
                 tileShapes[i][j].setPosition(x1 + j * tileSize, y2 + i * tileSize);
     }
 
-    // void setBasePitch(float p) { base_pitch = p; }
-    // void setPitch(int h)
-    // {
-    //     h = std::min(base_pitch, (float)h);
-    //     beep.setPitch((-8 * (float)h) / base_pitch + 4);
-    // }
-
-    // void bindSoundCheck(const bool &soundcheck) {soundChe}
-
     void update_values(const Tile &tile)
     {
         for (int i = 0; i < N; i++)
             for (int j = 0; j < N; j++)
-            {
                 tileShapes[i][j].update_values(
                     tile.tiles[i][j],
                     tile.H[i][j],
                     max_dist);
-            }
-        // if (*soundCheck)
-        //     beep.play();
+
+        if (*enableSound)
+            beep.play();
     }
 
     void draw(sf::RenderTarget &rt, sf::RenderStates states) const override
     {
         states.transform *= getTransform();
-        for (int i = 0; i < N; i++)
-            for (int j = 0; j < N; j++)
-                rt.draw(tileShapes[i][j], states);
+        for (auto &row : tileShapes)
+            for (auto &tile : row)
+                rt.draw(tile, states);
     }
 };

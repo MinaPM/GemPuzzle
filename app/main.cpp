@@ -3,12 +3,11 @@
 Puzzle *puzzlePtr = nullptr;
 TileControls *tileControlsPtr = nullptr;
 
-//									sound is causing an error on Windows
-bool load_resourses(sf::Font &font /*, sf::SoundBuffer &buffer*/)
+bool load_resourses(sf::Font &font, sf::SoundBuffer &buffer)
 {
 	// loading sound
-	// if (!buffer.loadFromFile("Assets/Audio/beep.wav"))
-	// 	return false;
+	if (!buffer.loadFromFile("Assets/Audio/beep.wav"))
+		return false;
 
 	// loading font
 	if (!font.loadFromFile("Assets/Fonts/roboto.ttf"))
@@ -54,24 +53,22 @@ int main()
 	sf::RenderWindow window(sf::VideoMode(1000, 720), "Gem Puzzle", sf::Style::Close, settings);
 	window.setFramerateLimit(30);
 
-	// sf::SoundBuffer buffer;
+	sf::SoundBuffer buffer;
 	sf::Font roboto_font;
-	if (!load_resourses(roboto_font /*, buffer*/))
+	if (!load_resourses(roboto_font, buffer))
 		return -1;
 
-	TileGrid tileShape;
 	TileControls tileControls(roboto_font);
 	TileData tileData(roboto_font);
+	TileGrid tileShape(roboto_font, buffer, tileControls.sound_check.status);
 
 	Puzzle puzzle(tileControls, tileData, tileShape);
 
 	tileControlsPtr = &tileControls;
 	puzzlePtr = &puzzle;
 
-	tileShape.setFont(roboto_font);
 	tileShape.center_tiles(window.getSize());
 	tileData.setPosition(20, 500);
-	// tileShape.setSoundBuffer(buffer);
 
 	tileControls.buttons[SolveButton].setOnClick(solve);
 	tileControls.buttons[ShowSolutionButton].setOnClick(display_solution);

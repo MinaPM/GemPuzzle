@@ -129,7 +129,7 @@ public:
             update_UI();
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        opened->direction=NONE;
+        opened->direction = NONE;
         return true;
     }
 
@@ -161,6 +161,10 @@ private:
         Tile *tile = iterator;
         while (tile != nullptr)
         {
+            tile->g = solutionSteps - 1;
+            tile->update_fgh();
+            tile->g = solutionSteps;
+            
             tile->next = solutionPath;
             solutionPath = tile;
             solutionSteps++;
