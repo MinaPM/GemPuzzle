@@ -1,12 +1,13 @@
 #include <SFML/Graphics.hpp>
 #include <thread>
-// template <typename Controlable>
+
+template <typename Controlable>
 class Control : public sf::Drawable, public sf::Transformable
 {
 public:
     sf::RectangleShape rectangle;
     sf::Text lable;
-    // Controlable controlable;
+    Controlable controlable;
     bool enabled, clicked;
     Control()
     {
@@ -81,18 +82,18 @@ public:
     }
 };
 
-class Button : public Control
+class Button : public Control<void (*)()>
 {
 public:
     std::thread button_thread;
-    void (*onClick)();
+    // void (*onClick)();
     Button(const sf::Font &font, const std::string &text, int size) : Control(font, text, size)
     {
         rectangle.setSize(sf::Vector2f(lable.getLocalBounds().width + 10,
                                        lable.getLocalBounds().height + 10));
         setPosition(0, 0);
         setColor(sf::Color::White, sf::Color::Red, sf::Color::Red);
-        onClick = nullptr;
+        controlable = nullptr;
     }
 
     void setPosition(float x, float y)
@@ -103,7 +104,7 @@ public:
 
     void click()
     {
-        if (!enabled || onClick == nullptr)
+        if (!enabled || controlable == nullptr)
             return;
         if (button_thread.joinable())
             button_thread.join();
@@ -112,33 +113,33 @@ public:
     }
     void setOnClick(void (*func)())
     {
-        onClick = func;
+        controlable = func;
     }
 
 private:
     void run()
     {
         disable();
-        if (onClick)
-            onClick();
+        if (controlable)
+            controlable();
         enable();
     }
 };
 
-class Slider : public Control
+class Slider : public Control<int>
 {
 
 public:
     sf::Text current_text;
     sf::RectangleShape current_rect;
-    int min, max, current, width;
+    int min, max, width;
 
     Slider(const sf::Font &font, const std::string &text, int size, int current, int min, int max) : Control(font, text, size)
     {
         width = 100;
         this->min = min;
         this->max = max;
-        this->current = current;
+        this->controlable = current;
         current_text = sf::Text(lable);
         current_text.setString(std::to_string(current));
 
@@ -170,9 +171,11 @@ public:
 
         float lenght = std::max(0.f, std::min((float)width, point.x - current_rect.getGlobalBounds().left));
         current_rect.setSize(sf::Vector2f(lenght, current_rect.getSize().y));
-        current = (lenght / width) * (max - min) + min;
-        current_text.setString(std::to_string(current));
+        controlable = (lenght / width) * (max - min) + min;
+        current_text.setString(std::to_string(controlable));
     }
+
+    int getPercentage() { return 100 * (max - controlable); }
 
     void enable()
     {
@@ -200,15 +203,14 @@ public:
     }
 };
 
-class CheckBox : public Control
+class CheckBox : public Control<bool>
 {
 
 public:
     sf::CircleShape check_circle;
-    bool status;
     CheckBox(const sf::Font &font, const std::string &text, int size, bool status = false) : Control(font, text, size)
     {
-        this->status = status;
+        controlable = status;
         rectangle.setSize(sf::Vector2f(15, 15));
         check_circle.setRadius(rectangle.getSize().x / 2);
         check_circle.setFillColor(sf::Color::Red);
@@ -238,7 +240,7 @@ public:
     {
         Control::draw(rt, states);
         states.transform *= getTransform();
-        if (status)
+        if (controlable)
             rt.draw(check_circle, states);
     }
 
@@ -248,13 +250,13 @@ public:
         check_circle.setFillColor(outline);
     }
 
-    const bool &bindStatus() { return status; }
+    const bool &bindStatus() { return controlable; }
 
-    void toggle() { status = !status; }
+    void toggle() { controlable = !controlable; }
 
-    void ckeck() { status = true; }
+    void ckeck() { controlable = true; }
 
-    void unckeck() { status = false; }
+    void unckeck() { controlable = false; }
 
     bool clickWithin(sf::Vector2i point)
     {

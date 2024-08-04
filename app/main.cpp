@@ -60,7 +60,7 @@ int main()
 
 	TileControls tileControls(roboto_font);
 	TileData tileData(roboto_font);
-	TileGrid tileShape(roboto_font, buffer, tileControls.sound_check.status);
+	TileGrid tileShape(roboto_font, buffer, tileControls.sound_check.controlable);
 
 	Puzzle puzzle(tileControls, tileData, tileShape);
 

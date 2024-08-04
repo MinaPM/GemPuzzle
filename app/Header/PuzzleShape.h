@@ -81,9 +81,8 @@ public:
 
             update_UI();
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(
-                100 * (tileControls.sliders[SolvingSpeedSlider].max -
-                       tileControls.sliders[SolvingSpeedSlider].current)));
+            if (tileControls.sliders[SolvingSpeedSlider].getPercentage() > 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(tileControls.sliders[SolvingSpeedSlider].getPercentage()));
 
             if (*iterator == goal)
             {
@@ -114,7 +113,7 @@ public:
         if (opened == nullptr)
             return false;
 
-        int intensity = tileControls.sliders[ShuffleSlider].current;
+        int intensity = tileControls.sliders[ShuffleSlider].controlable;
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distrib(0, 3);
@@ -141,9 +140,8 @@ public:
         while (iterator != nullptr)
         {
             update_UI();
-            std::this_thread::sleep_for(std::chrono::milliseconds(
-                100 * (tileControls.sliders[SolutionSpeedSlider].max -
-                       tileControls.sliders[SolutionSpeedSlider].current)));
+            if (tileControls.sliders[SolutionSpeedSlider].getPercentage() > 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(tileControls.sliders[SolutionSpeedSlider].getPercentage()));
             iterator = iterator->next;
         }
     }
@@ -164,7 +162,7 @@ private:
             tile->g = solutionSteps - 1;
             tile->update_fgh();
             tile->g = solutionSteps;
-            
+
             tile->next = solutionPath;
             solutionPath = tile;
             solutionSteps++;
