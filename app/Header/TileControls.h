@@ -59,10 +59,7 @@ public:
         setColor(c1, c2, c3);
     }
 
-    void alignLeft()
-    {
-        lable.setPosition(rectangle.getPosition().x, lable.getPosition().y);
-    }
+    void alignLeft() { lable.setPosition(rectangle.getPosition().x, lable.getPosition().y); }
 
     sf::Vector2f getPosition()
     {
@@ -260,7 +257,7 @@ public:
 
     bool clickWithin(sf::Vector2i point)
     {
-        if (within(point))
+        if (enabled && within(point))
         {
             toggle();
             return true;
@@ -270,18 +267,17 @@ public:
     }
 };
 
-enum Buttons
+enum CheckBoxes
 {
-    SolveButton,
-    ShuffleButton,
-    ShowSolutionButton
+    SoundCheckBox,
+    UseThreadsCheckBox,
 };
 
-enum Sliders
+enum PuzzleFunctions
 {
-    ShuffleSlider,
-    SolvingSpeedSlider,
-    SolutionSpeedSlider
+    SHUFFLE,
+    SOLVE,
+    SOLUTION
 };
 
 class TileControls : public sf::Drawable,
@@ -291,33 +287,47 @@ class TileControls : public sf::Drawable,
 public:
     Button buttons[3];
     Slider sliders[3];
-    CheckBox sound_check;
+    CheckBox checkboxes[2];
     TileControls(const sf::Font &font)
         : sliders{
               Slider(font, "Shuffle intensity", 20, 30, 4, 100),
               Slider(font, "Solving speed", 20, 5, 1, 10),
               Slider(font, "Solution speed", 20, 1, 1, 10)},
           buttons{
-              Button(font, "Solve", 20),
               Button(font, "Shuffle", 20),
+              Button(font, "Solve", 20),
               Button(font, "Show Solution", 20),
           },
-          sound_check(font, "Sounds", 20, true)
+          checkboxes{CheckBox(font, "Sounds", 20, true), CheckBox(font, "Multi-threads", 20, true)}
     {
+        int x = 20, y = 30;
+        for (auto &checkbox : checkboxes)
+        {
+            checkbox.setPosition(x, y);
+            y = checkbox.getPosition().y + 30;
+        }
 
-        sound_check.setPosition(20, 5);
-        int x = 20;
-        for (auto &button : buttons)
+        y = 100;
+
+        for (size_t i = 0; i < sizeof(buttons) / sizeof(*buttons); i++)
         {
-            button.setPosition(x, 40);
-            x = button.getPosition().x + button.getSize().x + 20;
+            sliders[i].setPosition(x, y);
+            y += sliders[i].getSize().y + 40;
+            buttons[i].setPosition(x, y);
+            y += 60;
         }
-        x = 100;
-        for (auto &slider : sliders)
-        {
-            slider.setPosition(20, x);
-            x += 80;
-        }
+
+        // for (auto &button : buttons)
+        // {
+        //     button.setPosition(x, 60);
+        //     x = button.getPosition().x + button.getSize().x + 20;
+        // }
+        // x = 100;
+        // for (auto &slider : sliders)
+        // {
+        //     slider.setPosition(20, x);
+        //     x += 80;
+        // }
     }
 
     void mouseClicked(sf::Vector2i point)
@@ -325,7 +335,10 @@ public:
         for (auto &slider : sliders)
             slider.clickWithin(point);
 
-        sound_check.clickWithin(point);
+        for (auto &checkbox : checkboxes)
+            checkbox.clickWithin(point);
+
+        // sound_check.clickWithin(point);
 
         for (auto &button : buttons)
         {
@@ -334,16 +347,20 @@ public:
         }
     }
 
-    void enabelAllButtons()
+    void setFunctions(PuzzleFunctions pFunction, bool enable)
     {
-        for (auto &button : buttons)
-            button.enable();
+        if (enable)
+        {
+            buttons[pFunction].enable();
+            sliders[pFunction].enable();
+        }
+        else
+        {
+            buttons[pFunction].disable();
+            sliders[pFunction].disable();
+        }
     }
-    void disabelAllButtons()
-    {
-        for (auto &button : buttons)
-            button.disable();
-    }
+
     void mouseReleased()
     {
         for (auto &slider : sliders)
@@ -366,6 +383,9 @@ public:
         for (auto &slider : sliders)
             rt.draw(slider, states);
 
-        rt.draw(sound_check, states);
+        for (auto &checkbox : checkboxes)
+            rt.draw(checkbox, states);
+
+        // rt.draw(sound_check, states);
     }
 };

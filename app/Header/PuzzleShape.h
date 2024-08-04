@@ -81,8 +81,8 @@ public:
 
             update_UI();
 
-            if (tileControls.sliders[SolvingSpeedSlider].getPercentage() > 0)
-                std::this_thread::sleep_for(std::chrono::milliseconds(tileControls.sliders[SolvingSpeedSlider].getPercentage()));
+            if (tileControls.sliders[SOLUTION].getPercentage() > 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(tileControls.sliders[SOLVE].getPercentage()));
 
             if (*iterator == goal)
             {
@@ -113,7 +113,7 @@ public:
         if (opened == nullptr)
             return false;
 
-        int intensity = tileControls.sliders[ShuffleSlider].controlable;
+        int intensity = tileControls.sliders[SHUFFLE].controlable;
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distrib(0, 3);
@@ -140,8 +140,8 @@ public:
         while (iterator != nullptr)
         {
             update_UI();
-            if (tileControls.sliders[SolutionSpeedSlider].getPercentage() > 0)
-                std::this_thread::sleep_for(std::chrono::milliseconds(tileControls.sliders[SolutionSpeedSlider].getPercentage()));
+            if (tileControls.sliders[SOLUTION].getPercentage() > 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(tileControls.sliders[SOLUTION].getPercentage()));
             iterator = iterator->next;
         }
     }

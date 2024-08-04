@@ -188,8 +188,8 @@ public:
     }
 
     bool operator==(Tile const &tile1) const { return !memcmp(tiles, tile1.tiles, sizeof(TileType) * NxN); }
-    bool operator<(Tile const &tile1) const { return f < tile1.f; }
-    bool operator>(Tile const &tile1) const { return f > tile1.f; }
+    bool operator<(Tile const &tile1) const { return (f == tile1.f) ? h < tile1.h : f < tile1.f; }
+    bool operator>(Tile const &tile1) const { return (f == tile1.f) ? h > tile1.h : f > tile1.f; }
 
 private:
     void swap_tiles(int row1, int col1, int row2, int col2)

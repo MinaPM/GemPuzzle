@@ -18,30 +18,37 @@ bool load_resourses(sf::Font &font, sf::SoundBuffer &buffer)
 
 void solve()
 {
-	tileControlsPtr->disabelAllButtons();
+	tileControlsPtr->setFunctions(SOLVE, false);
+	tileControlsPtr->setFunctions(SHUFFLE, false);
+	tileControlsPtr->setFunctions(SOLUTION, false);
+	tileControlsPtr->sliders[SOLVE].enable();
+	tileControlsPtr->checkboxes[UseThreadsCheckBox].disable();
 
-	puzzlePtr->solve();
+	puzzlePtr->solve(tileControlsPtr->checkboxes[UseThreadsCheckBox].controlable);
 
-	// tileControlsPtr->enabelAllButtons();
 	if (puzzlePtr->isSolved())
-		tileControlsPtr->buttons[ShowSolutionButton].enable();
+		tileControlsPtr->setFunctions(SOLUTION, true);
 }
 void shuffle()
 {
-	tileControlsPtr->sliders[ShuffleSlider].disable();
-	tileControlsPtr->disabelAllButtons();
+	tileControlsPtr->setFunctions(SOLVE, false);
+	tileControlsPtr->setFunctions(SHUFFLE, false);
+	tileControlsPtr->setFunctions(SOLUTION, false);
 
 	puzzlePtr->shuffle();
 
-	tileControlsPtr->sliders[ShuffleSlider].enable();
-	tileControlsPtr->enabelAllButtons();
-	tileControlsPtr->buttons[ShowSolutionButton].disable();
+	tileControlsPtr->setFunctions(SOLVE, true);
+	tileControlsPtr->setFunctions(SHUFFLE, true);
 }
 void display_solution()
 {
-	tileControlsPtr->disabelAllButtons();
+	tileControlsPtr->setFunctions(SOLVE, false);
+	tileControlsPtr->setFunctions(SHUFFLE, false);
+	tileControlsPtr->setFunctions(SOLUTION, false);
+	tileControlsPtr->sliders[SOLUTION].enable();
+
 	puzzlePtr->display_solution();
-	tileControlsPtr->buttons[ShowSolutionButton].enable();
+	tileControlsPtr->setFunctions(SOLUTION, true);
 }
 
 int main()
@@ -60,7 +67,7 @@ int main()
 
 	TileControls tileControls(roboto_font);
 	TileData tileData(roboto_font);
-	TileGrid tileShape(roboto_font, buffer, tileControls.sound_check.controlable);
+	TileGrid tileShape(roboto_font, buffer, tileControls.checkboxes[SoundCheckBox].controlable);
 
 	Puzzle puzzle(tileControls, tileData, tileShape);
 
@@ -68,14 +75,14 @@ int main()
 	puzzlePtr = &puzzle;
 
 	tileShape.center_tiles(window.getSize());
-	tileData.setPosition(20, 500);
+	tileData.setPosition(10, 450);
 
-	tileControls.buttons[SolveButton].setOnClick(solve);
-	tileControls.buttons[ShowSolutionButton].setOnClick(display_solution);
-	tileControls.buttons[ShuffleButton].setOnClick(shuffle);
+	tileControls.buttons[SOLVE].setOnClick(solve);
+	tileControls.buttons[SOLUTION].setOnClick(display_solution);
+	tileControls.buttons[SHUFFLE].setOnClick(shuffle);
 
-	tileControls.buttons[SolveButton].disable();
-	tileControls.buttons[ShowSolutionButton].disable();
+	tileControlsPtr->setFunctions(SOLVE, false);
+	tileControlsPtr->setFunctions(SOLUTION, false);
 
 	while (true)
 	{
